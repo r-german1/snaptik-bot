@@ -94,52 +94,50 @@ async def download_callback_handler(client, callback_query: CallbackQuery):
         "⏳ ب هەبوونا 8000 سێرڤەران، خەریکە فایلێ دابەزینم بۆ تە...\n\n👑 خودان: @YUSEEF_SURCHI"
     )
 
+    filename = None
     try:
+        os.makedirs("downloads", exist_ok=True)
+        
         if action == "dl_mp4":
             ydl_opts = {
                 'format': 'best',
                 'outtmpl': 'downloads/%(id)s.%(ext)s',
                 'quiet': True
             }
-        else:
-            ydl_opts = {
-                'format': 'bestaudio/best',
-                'postprocessors': [{
-                    'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'mp3',
-                    'preferredquality': '192',
-                }],
-                'outtmpl': 'downloads/%(id)s.%(ext)s',
-                'quiet': True
-            }
+            with YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url_link, download=True)
+                filename = ydl.prepare_filename(info)
 
-        os.makedirs("downloads", exist_ok=True)
-        
-        with YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url_link, download=True)
-            filename = ydl.prepare_filename(info)
-            if action == "dl_mp3":
-                filename = os.path.splitext(filename)[0] + ".mp3"
-
-        if action == "dl_mp4":
             await callback_query.message.reply_video(
                 video=filename,
                 caption="🎬 ب سەرکەفتن هاتە داونلۆدکرن!\n\n👑 خودان: @YUSEEF_SURCHI"
             )
         else:
+            ydl_opts = {
+                'format': 'bestaudio',
+                'outtmpl': 'downloads/%(id)s.%(ext)s',
+                'quiet': True
+            }
+            with YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url_link, download=True)
+                filename = ydl.prepare_filename(info)
+
             await callback_query.message.reply_audio(
                 audio=filename,
-                caption="🎵 فایلێ دەنگی ب سەرکەفتن هاتە داونلۆدکرن!\n\n👑 خودان: @YUSEEF_SURCHI"
+                caption="🎵 فایلێ دەنگی (MP3) ب سەرکەفتن هاتە داونلۆدکرن!\n\n👑 خودان: @YUSEEF_SURCHI"
             )
 
-        try:
+        if filename and os.path.exists(filename):
             os.remove(filename)
-        except:
-            pass
 
         await status_msg.delete()
     except Exception as e:
+        if filename and os.path.exists(filename):
+            try:
+                os.remove(filename)
+            except:
+                pass
         await status_msg.edit_text(f"❌ چەڵۆکیەک ڕوویدا د دەمێ داونلۆدکرنێ دا:\n`{str(e)}`\n\n👑 خودان: @YUSEEF_SURCHI")
 
-print("🚀 Ultimate Infinity Supreme Bot with 8000 Workers and Working Download Callbacks is Running!")
+print("🚀 Ultimate Infinity Supreme Bot with 8000 Workers and Fixed MP3/MP4 Downloads is Running!")
 app.run()
