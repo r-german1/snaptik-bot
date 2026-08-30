@@ -7,7 +7,9 @@ from yt_dlp import YoutubeDL
 API_ID = int(os.environ.get("API_ID", "34584240"))
 API_HASH = os.environ.get("API_HASH", "eba4f8333cba5f9697a1d20779d4d6e9")
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8918686553:AAH405vftzUcQPQ215ZhmknM4ll0vbn1xtU")
+
 OWNER_USERNAME = "@X_MAM6"
+OWNER_DISPLAY_NAME = "MAMZAGROS"
 
 CHANNELS = [
     "@mamzagrosProfile",
@@ -56,12 +58,14 @@ async def start_command_handler(client, message: Message):
             buttons.append([InlineKeyboardButton(f"📢 بەشداربە لە کەناڵی {index}", url=f"https://t.me/{clean_ch}")])
         
         buttons.append([InlineKeyboardButton("🔄 پشکنینی بەشداربوونی ئینفینیتی", callback_data="check_sub")])
+        buttons.append([InlineKeyboardButton(f"👑 پەیوەندی بە خاوەن: {@X_MAM6}", url=f"https://t.me/{@X_MAM6.replace('@', '')}")])
         keyboard = InlineKeyboardMarkup(buttons)
         
         await message.reply_text(
-            f"⚠️ ئاگاداری لە سیستەمی خاوەن {OWNER_USERNAME}:\n\n"
+            f"⚠️ ئاگاداری لە سیستەمی خاوەن {@X_MAM6}:\n\n"
             f"بۆ ئەوەی بتوانیت لەم بۆتە بێسنوورە کەڵک وەربگریت، دەبێت سەرەتا لە هەموو ئەم کەناڵانەی خوارەوە بەشدار ببیت!\n\n"
-            f"پشتی بەشداربوون، دوگمەی پشکنین کلیک بکە 👇",
+            f"پشتی بەشداربوون، دوگمەی پشکنین کلیک بکە 👇\n\n"
+            f"👑 خاوەن: {@X_MAM6}",
             reply_markup=keyboard
         )
         return
@@ -69,26 +73,35 @@ async def start_command_handler(client, message: Message):
     welcome_text = (
         f"🌟 سڵاو لە تو هەڤاڵی خۆشەویست!\n\n"
         f"🤖 ئەمە مەزنترین و پێشکەوتووترین بۆتی داونلۆدکردنی جیهانە بێ هیچ سنوورەکێ کو کوالیتیا 4K و MP3 بێ کێشە پێشکەش دکەت.\n\n"
-        f"👑 خاوەن و دامەزرێنەری ڕەهای ئەم بۆتە: {OWNER_USERNAME}\n\n"
+        f"👑 خاوەن و دامەزرێنەری ڕەهای ئەم بۆتە: {@X_MAM6}\n\n"
         f"🔗 بۆ دەستپێکردن، لینکەی ڤیدیۆکەی (تیکتۆک، اینستاگرام، یوتیوب، سناپچات) بنێرە بۆم بۆ داونلۆدکرنێ!"
     )
-    await message.reply_text(welcome_text)
+    
+    welcome_kb = InlineKeyboardMarkup([
+        [InlineKeyboardButton(f"👑 خاوەن: {@X_MAM6}", url=f"https://t.me/{@X_MAM6.replace('@', '')}")]
+    ])
+    await message.reply_text(welcome_text, reply_markup=welcome_kb)
 
-# **بەشا نوی و گرنگ بۆ چارەسەرکرنا دوگمەی پشکنینێ:**
 @app.on_callback_query(filters.regex("check_sub"))
 async def callback_check_subscription(client, callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
     is_joined = await check_all_channels(client, user_id)
     
     if not is_joined:
-        await callback_query.answer("❌ هێشتا لە هەموو کەناڵەکان بەشدار نەکردوویت!", show_alert=True)
+        await callback_query.answer(f"❌ هێشتا لە هەموو کەناڵەکان بەشدار نەکردوویت!\n👑 خاوەن: {@X_MAM6}", show_alert=True)
         return
     
-    await callback_query.answer("✅ پیرۆزە! ئێستا دەتوانیت ڤیدیۆ بنێریت.", show_alert=True)
+    await callback_query.answer(f"✅ پیرۆزە! ئێستا دەتوانیت ڤیدیۆ بنێریت.\n👑 خاوەن: {@X_MAM6}", show_alert=True)
+    
+    success_kb = InlineKeyboardMarkup([
+        [InlineKeyboardButton(f"👑 خاوەن: {@X_MAM6}", url=f"https://t.me/{@X_MAM6.replace('@', '')}")]
+    ])
+    
     await callback_query.message.edit_text(
         f"🌟 **سوپاس بۆ بەشداربوونا تە ل هەمی کەناڵان!**\n\n"
         f"🤖 ئێستا بۆتەکەی مە ئامادەیە. لینکەی ڤیدیۆیا خۆ (تیکتۆک، اینستاگرام، یوتیوب، سناپچات) بنێرە بۆم!\n\n"
-        f"👑 خاوەن: {OWNER_USERNAME}"
+        f"👑 خاوەن و بەرپرس: {@X_MAM6}",
+        reply_markup=success_kb
     )
 
 @app.on_message(filters.text & filters.private & ~filters.command(["start"]))
@@ -103,20 +116,32 @@ async def downloader_core_handler(client, message: Message):
             buttons.append([InlineKeyboardButton(f"📢 بەشداربە لە کەناڵی {index}", url=f"https://t.me/{clean_ch}")])
         
         buttons.append([InlineKeyboardButton("🔄 پشکنینی بەشداربوونی ئینفینیتی", callback_data="check_sub")])
+        buttons.append([InlineKeyboardButton(f"👑 پەیوەندی بە خاوەن: {@X_MAM6}", url=f"https://t.me/{@X_MAM6.replace('@', '')}")])
         keyboard = InlineKeyboardMarkup(buttons)
         
         await message.reply_text(
-            f"❌ تکایە سەرەتا لە هەموو کەناڵەکان بەشدار ببە تاوەکو سیستەمێ خاوەن {OWNER_USERNAME} ڕێگەی داونلۆدکرنێ بدات!",
+            f"❌ تکایە سەرەتا لە هەموو کەناڵەکان بەشدار ببە تاوەکو سیستەمێ خاوەن {@X_MAM6} ڕێگەی داونلۆدکرنێ بدات!\n\n"
+            f"👑 خاوەن: {@X_MAM6}",
             reply_markup=keyboard
         )
         return
 
     url_link = message.text.strip()
     if not url_link.startswith("http"):
-        await message.reply_text(f"⚠️ تکایە لینکەکی دروست و ڕاستەقینە بنێرە برا!\n\n👑 خاوەن: {OWNER_USERNAME}")
+        err_kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton(f"👑 خاوەن: {@X_MAM6}", url=f"https://t.me/{@X_MAM6.replace('@', '')}")]
+        ])
+        await message.reply_text(
+            f"⚠️ تکایە لینکەکی دروست و ڕاستەقینە بنێرە برا!\n\n"
+            f"👑 خاوەن: {@X_MAM6}",
+            reply_markup=err_kb
+        )
         return
 
-    process_msg = await message.reply_text(f"⚡️ سیستەمێ ئینفینیتی: خەریکە زانیاریێن ڤیدیۆیێ دئینم خوارێ...\n\n👑 خاوەن: {OWNER_USERNAME}")
+    process_msg = await message.reply_text(
+        f"⚡️ سیستەمێ ئینفینیتی: خەریکە زانیاریێن ڤیدیۆیێ دئینم خوارێ...\n\n"
+        f"👑 خاوەن: {@X_MAM6}"
+    )
 
     try:
         ydl_opts = {'quiet': True, 'format': 'best'}
@@ -131,7 +156,7 @@ async def downloader_core_handler(client, message: Message):
                 InlineKeyboardButton("🎵 داونلۆدکرنا MP3", callback_data=f"dl_mp3|{url_link}")
             ],
             [
-                InlineKeyboardButton(f"👑 خاوەن: {OWNER_USERNAME}", url="https://t.me/X_MAM6")
+                InlineKeyboardButton(f"👑 خاوەن: {@X_MAM6}", url=f"https://t.me/{@X_MAM6.replace('@', '')}")
             ]
         ])
         
@@ -139,14 +164,18 @@ async def downloader_core_handler(client, message: Message):
             f"🎬 ناڤێ ڤیدیۆیێ: {vid_title}\n"
             f"⏱ دەم: {vid_time} چرکە\n\n"
             f"کوالیتیا خۆ هەڵبژێرە بۆ داونلۆدکرنێ 👇\n\n"
-            f"👑 خاوەن و بەرپرس: {OWNER_USERNAME}",
+            f"👑 خاوەن و بەرپرس: {@X_MAM6}",
             reply_markup=action_kb
         )
     except Exception as err:
+        err_kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton(f"👑 خاوەن: {@X_MAM6}", url=f"https://t.me/{@X_MAM6.replace('@', '')}")]
+        ])
         await process_msg.edit_text(
             f"❌ هەڵەیەک ڕوویدا لە وەرگرتنی ڤیدیۆکە:\n`{str(err)}`\n\n"
-            f"👑 خاوەن: {OWNER_USERNAME}"
+            f"👑 خاوەن: {@X_MAM6}",
+            reply_markup=err_kb
         )
 
-print("🚀 Infinity Supreme Bot with Working Callback is Running!")
+print(f"🚀 Infinity Supreme Bot with Owner {@X_MAM6} is Running!")
 app.run()
