@@ -1,17 +1,17 @@
 import os
 import asyncio
 from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 import yt_dlp
 
-# زانیاریێن بۆتی و خودانی
-API_ID = int(os.environ.get("API_ID", "0"))  # ل سەر Railway دڤێت ب دەی
-API_HASH = os.environ.get("API_HASH", "")    # ل سەر Railway دڤێت ب دەی
+# زانیاریێن سەرەکی یێن بۆتی و خودانی
+API_ID = int(os.environ.get("API_ID", "0"))
+API_HASH = os.environ.get("API_HASH", "")
 BOT_TOKEN = "8918686553:AAH405vftzUcQPQ215ZhmknM4ll0vbn1xtU"
 OWNER_ID = 8038533940
-OWNER_NAME = "ZAGROS"
+OWNER_NAME = "يوسف"
 
-app = Client("downloader_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+app = Client("ultimate_downloader_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
 # ٨ کەناڵێن مەرج بۆ Join بوونێ
 CHANNELS = [
@@ -26,7 +26,6 @@ CHANNELS = [
 ]
 
 async def check_subscription(client, user_id):
-    # ئەگەر ئەڤ کەسە خودانێ بۆتی بیت، پێدڤی نینە پشکنینا کەناڵان بۆ بکەین (بۆ هندێ تو بێ کێشە تێستی بکەی)
     if user_id == OWNER_ID:
         return True
         
@@ -41,11 +40,18 @@ async def check_subscription(client, user_id):
 
 def get_join_keyboard():
     keyboard = [
-        [InlineKeyboardButton("📢 کەناڵێ ١", url="https://t.me/mamzaga"), InlineKeyboardButton("📢 کەناڵێ ٢", url="https://t.me/MAMxZAGROS")],
-        [InlineKeyboardButton("📢 کەناڵێ ٣", url="https://t.me/mamzagrosStore"), InlineKeyboardButton("📢 کەناڵێ ٤", url="https://t.me/mamzagrosIPA")],
-        [InlineKeyboardButton("📢 کەناڵێ ٥", url="https://t.me/mamzagrosGroup"), InlineKeyboardButton("📢 کەناڵێ ٦", url="https://t.me/mamzagrosinfo")],
-        [InlineKeyboardButton("📢 کەناڵێ ٧", url="https://t.me/mxbots1"), InlineKeyboardButton("📢 کەناڵێ ٨", url="https://t.me/mamzagros")],
-        [InlineKeyboardButton("✅ من هەمی join کرین، پشکنین بکە", callback_data="check_join")]
+        [InlineKeyboardButton("📢 کەناڵی ۱", url="https://t.me/mamzaga"), InlineKeyboardButton("📢 کەناڵی ۲", url="https://t.me/MAMxZAGROS")],
+        [InlineKeyboardButton("📢 کەناڵی ۳", url="https://t.me/mamzagrosStore"), InlineKeyboardButton("📢 کەناڵی ۴", url="https://t.me/mamzagrosIPA")],
+        [InlineKeyboardButton("📢 کەناڵی ۵", url="https://t.me/mamzagrosGroup"), InlineKeyboardButton("📢 کەناڵی ۶", url="https://t.me/mamzagrosinfo")],
+        [InlineKeyboardButton("📢 کەناڵی ۷", url="https://t.me/mxbots1"), InlineKeyboardButton("📢 کەناڵی ۸", url="https://t.me/mamzagros")],
+        [InlineKeyboardButton("✅ هەموویم جۆین کرد، پشکنین بکە", callback_data="check_join")]
+    ]
+    return InlineKeyboardMarkup(keyboard)
+
+def get_media_keyboard():
+    keyboard = [
+        [InlineKeyboardButton("🎬 داونلۆدی ڤیدیۆ (4K / MP4)", callback_data="dl_video"),
+         InlineKeyboardButton("🎵 داونلۆدی دەنگ (MP3)", callback_data="dl_audio")]
     ]
     return InlineKeyboardMarkup(keyboard)
 
@@ -56,67 +62,118 @@ async def start(client, message):
     
     if not is_joined:
         await message.reply_text(
-            "سلاڤ! ب خێر هاتنی بۆ بۆتێ داونلۆدکرنێ.\n"
-            "بۆ بکارئینانا بۆتی، پێدڤییە پاشکو ئەڤان کەناڵێن ل خوارێ هەمیان Join بکەی! ⚠️\n\n"
-            "پشتی تە هەمی join کرین، دوگمەیا پشکنینێ ل خوارێ کلیک بکە:",
+            "سڵاو! بە خێر هاتیت بۆ بۆتی داونلۆدکەری پێشکەوتوو.\n"
+            "بۆ بەکارهێنانی بۆتەکە، پێویستە سەرەتا لە هەموو کەناڵەکانی خوارەوە ئەندام (Join) ببیت! ⚠️\n\n"
+            "دوای ئەوەی هەموویت جۆین کرد، دوگمەی پشکنین لە خوارەوە بگرە:",
             reply_markup=get_join_keyboard()
         )
         return
 
     await message.reply_text(
-        f"سلاڤ ل تە هه‌ڤالێ هێژا! ئەز بۆتەکێ داونلۆدکرنێ مە ب کوالیتیا بلندا 4K و MP3 بێ watermark بۆ هەمی کەسان.\n"
-        f"خودانێ ڤی بۆتی: **{OWNER_NAME}** 👑\n\n"
-        "نۆکە لینکێ ڤیدیۆیا خۆ بۆ من بنێرە دا بۆ تە داونلۆد بکەم!"
+        f"سڵاو لە تو هه‌ڤاڵی خۆشەویست! ئەز بۆتێکی داونلۆدکرنی مە بە بەرزترین کوالیتی 4K و MP3 بێ وێنەڤەکرن (No Watermark).\n"
+        f"خاوەنی ئەم بۆتە: **{OWNER_NAME}** 👑\n\n"
+        "بۆ دەستپێکردن، لینکەی ڤیدیۆکەی (تیکتۆک، اینستاگرام، یوتیوب، سناپچات) بنێرە بۆم!"
     )
 
 @app.on_callback_query(filters.regex("check_join"))
-async def callback_check_join(client, callback_query):
+async def callback_check_join(client, callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
     is_joined = await check_subscription(client, user_id)
     
     if not is_joined:
-        await callback_query.answer("تە هنەک کەناڵ هێشتا join نەکربوون! تکایە هەمیان join بکە.", show_alert=True)
+        await callback_query.answer("تۆ هێشتا هەموو کەناڵەکانت جۆین نەکردووە! تکایە هەمویان جۆین بکە.", show_alert=True)
         return
     
     await callback_query.message.edit_text(
-        f"پیرۆزە! تە هەمی کەناڵ join کرین ✅.\n"
-        f"خودانێ بۆتی: **{OWNER_NAME}**.\n\n"
-        "نوکە لینکێ خۆ بنێرە دا کار بکەین!"
+        f"پیرۆزە! تۆ هەموو کەناڵەکانت جۆین کرد ✅.\n"
+        f"خاوەنی بۆت: **{OWNER_NAME}**.\n\n"
+        "ئێستا لینکەکەی خۆت بنێرە تا کار بکەین!"
     )
 
+# گلۆبال بۆ پاراستنا لینکێ بکارئینەری د دەمێ هەلبژاردنا فۆرماتێ دا
+user_links = {}
+
 @app.on_message(filters.regex(r"https?://[^\s]+"))
-async def download_media(client, message):
+async def receive_link(client, message):
     user_id = message.from_user.id
     is_joined = await check_subscription(client, user_id)
     
     if not is_joined:
         await message.reply_text(
-            "ب بۆرینا تە! بۆ وێ چەندێ بتشێ ڤیدیۆیان داونلۆد بکەی، پێدڤییە پاشکو ل ڤان کەناڵان هەمیان join ببی:",
+            "ب بۆرینا تو! بۆ داونلۆدکرنا ڤیدیۆیان، پێویستە لەم کەناڵانەی خوارەوە ئەندام ببیت:",
             reply_markup=get_join_keyboard()
         )
         return
 
     url = message.text.strip()
-    status_msg = await message.reply_text("🔄 جارە زانیاری دهێنە کومکرن و ب کوالیتیا 4K وێڤەدەکرن...")
+    user_links[user_id] = url
+    
+    await message.reply_text(
+        "فۆرماتی دابەزاندن هەڵبژێرە:",
+        reply_markup=get_media_keyboard()
+    )
+
+@app.on_callback_query(filters.regex("^dl_"))
+async def process_download(client, callback_query: CallbackQuery):
+    user_id = callback_query.from_user.id
+    action = callback_query.data
+    
+    if user_id not in user_links:
+        await callback_query.answer("ماوەی لینکەکە بەسەرچوو، تکایە جارێکی تر لینکەکەت بنێرە.", show_alert=True)
+        return
+
+    url = user_links[user_id]
+    status_msg = await callback_query.message.edit_text("🔄 خەریکە زانیاری کۆدەکەینەوە و داونلۆد دەکەین...")
 
     os.makedirs("downloads", exist_ok=True)
 
-    ydl_opts = {
-        'outtmpl': 'downloads/%(id)s.%(ext)s',
-        'format': 'bestvideo[height<=2160]+bestaudio/best[height<=2160]/best',
-        'noplaylist': True,
-    }
+    if action == "dl_video":
+        ydl_opts = {
+            'outtmpl': 'downloads/%(id)s.%(ext)s',
+            'format': 'bestvideo[height<=2160]+bestaudio/best[height<=2160]/best',
+            'noplaylist': True,
+        }
+    else:  # dl_audio (MP3)
+        ydl_opts = {
+            'outtmpl': 'downloads/%(id)s.%(ext)s',
+            'format': 'bestaudio/best',
+            'postprocessors': [{
+                'key': 'FFmpegExtractAudio',
+                'preferredcodec': 'mp3',
+                'preferredquality': '320',
+            }],
+            'noplaylist': True,
+        }
 
     try:
         def run_yt_dlp():
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=True)
-                return ydl.prepare_filename(info), info.get('title', 'video')
+                if action == "dl_audio":
+                    # بۆ دەنگ فایلێ mp3 ڤەگەڕینە
+                    base_f = ydl.prepare_filename(info)
+                    return os.path.splitext(base_f)[0] + ".mp3", info.get('title', 'audio')
+                else:
+                    return ydl.prepare_filename(info), info.get('title', 'video')
 
         file_path, title = await asyncio.to_thread(run_yt_dlp)
 
-        await status_msg.edit_text("📤 نوکە ڤیدیۆ ب بێ watermark و کوالیتیا بلندا 4K دهێتە هنارتن...")
-        await message.reply_video(video=file_path, caption=f"✨ ڤیدیۆیا تە هاتە داونلۆدکرن!\nخودانێ بۆتی: {OWNER_NAME}")
+        if action == "dl_video":
+            await status_msg.edit_text("📤 خەریکە ڤیدیۆکە بە کوالیتاتی 4K بێ watermark دەنێردرێت...")
+            await client.send_video(
+                chat_id=user_id,
+                video=file_path,
+                caption=f"✨ ڤیدیۆکەت بە سەرکەوتوویی داونلۆد بوو!\n👤 خاوەنی بۆت: {OWNER_NAME}"
+            )
+        else:
+            await status_msg.edit_text("📤 خەریکە دەنگەکە (MP3) دەنێردرێت...")
+            await client.send_audio(
+                chat_id=user_id,
+                audio=file_path,
+                title=title,
+                performer=OWNER_NAME,
+                caption=f"🎵 دەنگی ڤیدیۆکە داونلۆد بوو!\n👤 خاوەنی بۆت: {OWNER_NAME}"
+            )
 
         if os.path.exists(file_path):
             os.remove(file_path)
@@ -124,7 +181,7 @@ async def download_media(client, message):
         await status_msg.delete()
 
     except Exception as e:
-        await status_msg.edit_text(f"❌ خەلەتیەک د داونلۆدکرنێ دا چێبوو:\n`{str(e)}`")
+        await status_msg.edit_text(f"❌ هەڵەیەک ڕوویدا لە کاتی داونلۆدکردن:\n`{str(e)}`")
 
 if __name__ == "__main__":
     app.run()
