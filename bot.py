@@ -63,17 +63,17 @@ async def start_command_handler(client, message: Message):
         keyboard = InlineKeyboardMarkup(buttons)
         
         await message.reply_text(
-            f"⚠️ **ئاگاداری لە سیستەمی خاوەن {@X_MAM6}:**\n\n"
-            f"بۆ ئەوەی بتوانیت لەم بۆتە بێسنوورە (Infinity) کەڵک وەربگریت، دەبێت سەرەتا لە **هەموو** ئەم کەناڵانەی خوارەوە بەشدار ببیت!\n\n"
+            f"⚠️ ئاگاداری لە سیستەمی خاوەن {OWNER_USERNAME}:\n\n"
+            f"بۆ ئەوەی بتوانیت لەم بۆتە بێسنوورە کەڵک وەربگریت، دەبێت سەرەتا لە هەموو ئەم کەناڵانەی خوارەوە بەشدار ببیت!\n\n"
             f"پشتی بەشداربوون، دوگمەی پشکنین کلیک بکە 👇",
             reply_markup=keyboard
         )
         return
 
     welcome_text = (
-        f"🌟 **سڵاو لە تو هەڤاڵی خۆشەویست!**\n\n"
-        f"🤖 ئەمە مەزنترین و پێشکەوتووترین بۆتی داونلۆدکردنی جیهانە بێ هیچ سنوورەکێ (Infinity Engine) کو کوالیتیا 4K و MP3 بێ کێشە پێشکەش دکەت.\n\n"
-        f"👑 **خاوەن و دامەزرێنەری ڕەهای ئەم بۆتە:** {@X_MAM6}\n\n"
+        f"🌟 سڵاو لە تو هەڤاڵی خۆشەویست!\n\n"
+        f"🤖 ئەمە مەزنترین و پێشکەوتووترین بۆتی داونلۆدکردنی جیهانە بێ هیچ سنوورەکێ کو کوالیتیا 4K و MP3 بێ کێشە پێشکەش دکەت.\n\n"
+        f"👑 خاوەن و دامەزرێنەری ڕەهای ئەم بۆتە: {OWNER_USERNAME}\n\n"
         f"🔗 بۆ دەستپێکردن، لینکەی ڤیدیۆکەی (تیکتۆک، اینستاگرام، یوتیوب، سناپچات) بنێرە بۆم بۆ داونلۆدکرنێ!"
     )
     await message.reply_text(welcome_text)
@@ -93,17 +93,17 @@ async def downloader_core_handler(client, message: Message):
         keyboard = InlineKeyboardMarkup(buttons)
         
         await message.reply_text(
-            f"❌ تکایە سەرەتا لە **هەموو** کەناڵەکان بەشدار ببە تاوەکو سیستەمێ خاوەن {@X_MAM6} ڕێگەی داونلۆدکرنێ بدات!",
+            f"❌ تکایە سەرەتا لە هەموو کەناڵەکان بەشدار ببە تاوەکو سیستەمێ خاوەن {OWNER_USERNAME} ڕێگەی داونلۆدکرنێ بدات!",
             reply_markup=keyboard
         )
         return
 
     url_link = message.text.strip()
     if not url_link.startswith("http"):
-        await message.reply_text(f"⚠️ تکایە لینکەکی دروست و ڕاستەقینە بنێرە برا!\n\n👑 خاوەن: {@X_MAM6}")
+        await message.reply_text(f"⚠️ تکایە لینکەکی دروست و ڕاستەقینە بنێرە برا!\n\n👑 خاوەن: {OWNER_USERNAME}")
         return
 
-    process_msg = await message.reply_text(f"⚡️ **سیستەمێ ئینفینیتی:** خەریکە زانیاریێن ڤیدیۆیێ دئینم خوارێ...\n\n👑 خاوەن: {@X_MAM6}")
+    process_msg = await message.reply_text(f"⚡️ سیستەمێ ئینفینیتی: خەریکە زانیاریێن ڤیدیۆیێ دئینم خوارێ...\n\n👑 خاوەن: {OWNER_USERNAME}")
 
     try:
         ydl_opts = {'quiet': True, 'format': 'best'}
@@ -118,21 +118,21 @@ async def downloader_core_handler(client, message: Message):
                 InlineKeyboardButton("🎵 داونلۆدکرنا MP3", callback_data=f"dl_mp3|{url_link}")
             ],
             [
-                InlineKeyboardButton(f"👑 خاوەن: {@X_MAM6}", url="https://t.me/X_MAM6")
+                InlineKeyboardButton(f"👑 خاوەن: {OWNER_USERNAME}", url="https://t.me/X_MAM6")
             ]
         ])
         
         await process_msg.edit_text(
-            f"🎬 **ناڤێ ڤیدیۆیێ:** {vid_title}\n"
-            f"⏱ **دەم:** {vid_time} چرکە\n\n"
+            f"🎬 ناڤێ ڤیدیۆیێ: {vid_title}\n"
+            f"⏱ دەم: {vid_time} چرکە\n\n"
             f"کوالیتیا خۆ هەڵبژێرە بۆ داونلۆدکرنێ 👇\n\n"
-            f"👑 **خاوەن و بەرپرس:** {@X_MAM6}",
+            f"👑 خاوەن و بەرپرس: {OWNER_USERNAME}",
             reply_markup=action_kb
         )
     except Exception as err:
         await process_msg.edit_text(
             f"❌ هەڵەیەک ڕوویدا لە وەرگرتنی ڤیدیۆکە:\n`{str(err)}`\n\n"
-            f"👑 **خاوەن:** {@X_MAM6}"
+            f"👑 خاوەن: {OWNER_USERNAME}"
         )
 
 print("🚀 Infinity Supreme Bot with Owner @X_MAM6 is Running Smoothly in Sorani!")
