@@ -10,7 +10,7 @@ API_HASH = os.environ.get("API_HASH", "eba4f8333cba5f9697a1d20779d4d6e9")
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8918686553:AAH405vftzUcQPQ215ZhmknM4ll0vbn1xtU")
 OWNER_USERNAME = "@X_MAM6"
 
-# لیستا ٨ کەناڵێن مەرج بۆ بەشداربوونێ (کەنالا تە ل ڕیزا ئێکێ یە)
+# لیستا تەواوی کەناڵێن مەرج بۆ بەشداربوونێ
 CHANNELS = [
     "@mamzagrosProfile",
     "@mamzaga",
@@ -64,7 +64,7 @@ async def start_command_handler(client, message: Message):
         
         await message.reply_text(
             f"⚠️ **ئاگاداری لە سیستەمی خاوەن {@X_MAM6}:**\n\n"
-            f"بۆ ئەوەی بتوانیت لەم بۆتە بێسنوورە (Infinity) کەڵک وەربگریت، دەبێت سەرەتا لە **هەموو** ئەم ٨ کەناڵەی خوارەوە بەشدار ببیت!\n\n"
+            f"بۆ ئەوەی بتوانیت لەم بۆتە بێسنوورە (Infinity) کەڵک وەربگریت، دەبێت سەرەتا لە **هەموو** ئەم کەناڵانەی خوارەوە بەشدار ببیت!\n\n"
             f"پشتی بەشداربوون، دوگمەی پشکنین کلیک بکە 👇",
             reply_markup=keyboard
         )
@@ -118,7 +118,7 @@ async def downloader_core_handler(client, message: Message):
                 InlineKeyboardButton("🎵 داونلۆدکرنا MP3", callback_data=f"dl_mp3|{url_link}")
             ],
             [
-                InlineKeyboardButton(f"👑 خاوەن: {@X_MAM6}", url=f"https://t.me/{OWNER_USERNAME.replace('@', '')}")
+                InlineKeyboardButton(f"👑 خاوەن: {@X_MAM6}", url="https://t.me/X_MAM6")
             ]
         ])
         
