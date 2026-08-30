@@ -5,3 +5,5 @@ aiohttp
 requests
 certifi
 ffmpeg-python
+redis
+pymongo
