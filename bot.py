@@ -4,16 +4,21 @@ from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 import yt_dlp
 
-# زانیاریێن سەرەکی یێن بۆتی و خودانی
 API_ID = int(os.environ.get("API_ID", "0"))
 API_HASH = os.environ.get("API_HASH", "")
 BOT_TOKEN = "8918686553:AAH405vftzUcQPQ215ZhmknM4ll0vbn1xtU"
 OWNER_ID = 8038533940
 OWNER_NAME = "يوسف"
 
-app = Client("ultimate_downloader_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
+# کارکردن لەسەر چەندین سەرڤەر پێویستی بە تێپەڕاندنی سێشن هەیە
+app = Client(
+    "multi_server_downloader_bot",
+    api_id=API_ID,
+    api_hash=API_HASH,
+    bot_token=BOT_TOKEN,
+    workers=64  # زیادکردنی ژمارەی کارمەندە ناوخۆییەکانی بۆتەکە بۆ توانای وەڵامدانەوەی خێرا لەسەر سەرڤەرە گەورەکان
+)
 
-# ٨ کەناڵێن مەرج بۆ Join بوونێ
 CHANNELS = [
     "mamzaga",
     "MAMxZAGROS",
@@ -28,7 +33,6 @@ CHANNELS = [
 async def check_subscription(client, user_id):
     if user_id == OWNER_ID:
         return True
-        
     for channel in CHANNELS:
         try:
             member = await client.get_chat_member(f"@{channel}", user_id)
@@ -63,7 +67,7 @@ async def start(client, message):
     if not is_joined:
         await message.reply_text(
             "سڵاو! بە خێر هاتیت بۆ بۆتی داونلۆدکەری پێشکەوتوو.\n"
-            "بۆ بەکارهێنانی بۆتەکە، پێویستە سەرەتا لە هەموو کەناڵەکانی خوارەوە ئەندام (Join) ببیت! ⚠️\n\n"
+            "بۆ بەکارهێنانی بۆتەکە، پێویستە سەرەتا لە هەموু کەناڵەکانی خوارەوە ئەندام (Join) ببیت! ⚠️\n\n"
             "دوای ئەوەی هەموویت جۆین کرد، دوگمەی پشکنین لە خوارەوە بگرە:",
             reply_markup=get_join_keyboard()
         )
@@ -90,7 +94,6 @@ async def callback_check_join(client, callback_query: CallbackQuery):
         "ئێستا لینکەکەی خۆت بنێرە تا کار بکەین!"
     )
 
-# گلۆبال بۆ پاراستنا لینکێ بکارئینەری د دەمێ هەلبژاردنا فۆرماتێ دا
 user_links = {}
 
 @app.on_message(filters.regex(r"https?://[^\s]+"))
@@ -133,7 +136,7 @@ async def process_download(client, callback_query: CallbackQuery):
             'format': 'bestvideo[height<=2160]+bestaudio/best[height<=2160]/best',
             'noplaylist': True,
         }
-    else:  # dl_audio (MP3)
+    else:
         ydl_opts = {
             'outtmpl': 'downloads/%(id)s.%(ext)s',
             'format': 'bestaudio/best',
@@ -150,7 +153,6 @@ async def process_download(client, callback_query: CallbackQuery):
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=True)
                 if action == "dl_audio":
-                    # بۆ دەنگ فایلێ mp3 ڤەگەڕینە
                     base_f = ydl.prepare_filename(info)
                     return os.path.splitext(base_f)[0] + ".mp3", info.get('title', 'audio')
                 else:
