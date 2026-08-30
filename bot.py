@@ -84,5 +84,62 @@ async def downloader_core_handler(client, message: Message):
             reply_markup=err_kb
         )
 
-print("🚀 Ultimate Infinity Supreme Bot with 8000 Workers and Owner @YUSEEF_SURCHI is Running!")
+@app.on_callback_query(filters.regex(r"^dl_"))
+async def download_callback_handler(client, callback_query: CallbackQuery):
+    data = callback_query.data
+    action, url_link = data.split("|", 1)
+    
+    await callback_query.answer("📥 نوکە ڤیدیۆ دەست پێ دکەت بۆ داونلۆدکرنێ...", show_alert=False)
+    status_msg = await callback_query.message.reply_text(
+        "⏳ ب هەبوونا 8000 سێرڤەران، خەریکە فایلێ دابەزینم بۆ تە...\n\n👑 خودان: @YUSEEF_SURCHI"
+    )
+
+    try:
+        if action == "dl_mp4":
+            ydl_opts = {
+                'format': 'best',
+                'outtmpl': 'downloads/%(id)s.%(ext)s',
+                'quiet': True
+            }
+        else:
+            ydl_opts = {
+                'format': 'bestaudio/best',
+                'postprocessors': [{
+                    'key': 'FFmpegExtractAudio',
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192',
+                }],
+                'outtmpl': 'downloads/%(id)s.%(ext)s',
+                'quiet': True
+            }
+
+        os.makedirs("downloads", exist_ok=True)
+        
+        with YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url_link, download=True)
+            filename = ydl.prepare_filename(info)
+            if action == "dl_mp3":
+                filename = os.path.splitext(filename)[0] + ".mp3"
+
+        if action == "dl_mp4":
+            await callback_query.message.reply_video(
+                video=filename,
+                caption="🎬 ب سەرکەفتن هاتە داونلۆدکرن!\n\n👑 خودان: @YUSEEF_SURCHI"
+            )
+        else:
+            await callback_query.message.reply_audio(
+                audio=filename,
+                caption="🎵 فایلێ دەنگی ب سەرکەفتن هاتە داونلۆدکرن!\n\n👑 خودان: @YUSEEF_SURCHI"
+            )
+
+        try:
+            os.remove(filename)
+        except:
+            pass
+
+        await status_msg.delete()
+    except Exception as e:
+        await status_msg.edit_text(f"❌ چەڵۆکیەک ڕوویدا د دەمێ داونلۆدکرنێ دا:\n`{str(e)}`\n\n👑 خودان: @YUSEEF_SURCHI")
+
+print("🚀 Ultimate Infinity Supreme Bot with 8000 Workers and Working Download Callbacks is Running!")
 app.run()
