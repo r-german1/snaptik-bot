@@ -14,7 +14,6 @@ CHANNELS = [
     "@MAMxZAGROS",
     "@mamzagrosStore",
     "@mamzagrosIPA",
-    "@mamzagrosGroup",
     "@mamzagrosinfo",
     "@mamzagros",
     "@mxbots1"
