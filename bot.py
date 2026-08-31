@@ -1,6 +1,7 @@
 import os
 import asyncio
 import time
+import random
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, CallbackQuery
 from yt_dlp import YoutubeDL
@@ -19,11 +20,15 @@ app = Client(
     sleep_threshold=0
 )
 
-# Advanced Global Storage & Legend MX Balance System
 user_stats = {}
 global_total_downloads = 0
 user_cooldown = {}
 banned_users = set()
+
+# 21 کۆدێن ڕۆژانە یێن جودا و تایبەت ژ 24 دەستپێدکەن (24 تا 44) ب پێکهاتەیا LEGEND-MX-
+LEGEND_DAILY_CODES = {
+    f"LEGEND-MX-{i}": 20 for i in range(24, 45)
+}
 
 def get_main_menu_keyboard():
     return InlineKeyboardMarkup([
@@ -41,7 +46,7 @@ def get_main_menu_keyboard():
         ],
         [
             InlineKeyboardButton("⚙️ سیستەم و پشکنین", callback_data="system_status"),
-            InlineKeyboardButton("🎁 خەلاتێن ڕۆژانە", callback_data="daily_bonus")
+            InlineKeyboardButton("🎁 خەلاتێن ڕۆژانە (کۆدێ تایبەت)", callback_data="daily_bonus")
         ],
         [
             InlineKeyboardButton("👑 خودان و دامەزرێنەر: @YUSEEF_SURCHI", url="https://t.me/YUSEEF_SURCHI")
@@ -60,6 +65,7 @@ async def start_command_handler(client, message: Message):
     text_content = message.text or ""
 
     if user_id not in user_stats:
+        unique_daily_code = f"MX-DAY-{user_id}-{random.randint(1000, 9999)}"
         user_stats[user_id] = {
             "name": user_name,
             "username": user_username,
@@ -71,10 +77,12 @@ async def start_command_handler(client, message: Message):
             "bonus_claimed": False,
             "balance": 0,
             "last_claim_time": 0,
-            "legend_mx_active": False
+            "last_daily_time": 0,
+            "legend_mx_active": False,
+            "daily_code": unique_daily_code,
+            "claimed_legend_codes": set()
         }
 
-    # Secret check for LEGEND-MX-BALANCE-600
     if "LEGEND-MX-BALANCE-600" in text_content or "LEGEND-MX-BALNCE-600" in text_content:
         user_stats[user_id]["balance"] += 600
         user_stats[user_id]["legend_mx_active"] = True
@@ -83,14 +91,11 @@ async def start_command_handler(client, message: Message):
 
     welcome_text = (
         f"🌟 سڵاو ل تە هەڤاڵێ خۆشەویست {user_name}!\n\n"
-        "🔥🔥 بخێرهاتن بۆ لابا سەرەکی یا هێزدارترین سیستەمێ داونلۆدکرنێ یێ جیهانێ (تیکتۆک، اینستاگرام، یوتیوب و پلاتفۆرمێن دی) ب کوالیتیا 4K و MP3 ب ناڤێ ڕاستەقینە!\n\n"
-        f"💰 Balance-ێ تە یێ نها: `{user_stats[user_id]['balance']}` Key\n\n"
-        "✨ **خاسەتیێن مەزن یێن سیستەمی (Mx Download & Legend Systems):**\n"
-        "• داونلۆدکرنا بێ کێشە، خێرا و باوەڕپێکری ب کوالیتیێن جودا\n"
-        "• سیستەمێ Key ێن 3 ساعتی و وەرگرتنا 10 Key\n"
-        "• پروفایلا تایبەت، مێژووا گەڕانێ و پلەیێن بەرزی\n\n"
+        "🔥🔥 بخێرهاتن بۆ لابا سەرەکی یا هێزدارترین سیستەمێ داونلۆدکرنێ یێ جیهانێ ب ناڤێ ڕاستەقینە!\n\n"
+        f"💰 Balance-ێ تە یێ نها: `{user_stats[user_id]['balance']}` Key\n"
+        f"🎁 کۆدێ خەلاتێ ڕۆژانەیێ تە: `{user_stats[user_id]['daily_code']}`\n\n"
         "👑 خودان و دامەزرێنەرێ ڕەها: @YUSEEF_SURCHI\n\n"
-        "🔗 **تێبینی:** بۆ دابەزاندنێ، تنێ لینکێ خۆ ل ڤێرە بنێرە یاخود دوگمەیێن خوارێ بکاربينە!"
+        "🔗 بۆ دابەزاندنێ، تنێ لینکێ خۆ ل ڤێرە بنێرە!"
     )
     
     await message.reply_text(welcome_text, reply_markup=get_main_menu_keyboard())
@@ -103,10 +108,8 @@ async def mx_video_download_menu_handler(client, callback_query: CallbackQuery):
 
     menu_text = (
         "📥 **Mx Video Download Lab (بەشێ داونلۆدکرنا ڤیدیۆیێ):**\n\n"
-        "✨ ل ڤێرە تو دشیای لینکێ خۆ بنێری و ڤیدیۆیێ ب هەلبژارتنا **MP4** یاخود **MP3** دابەزینی.\n"
-        "💡 **تێبینی:** هەر داونلۆدکرنەک ب تنێ **1 Key** ژ Balance-ێ تە کێم دکەت!\n"
+        "✨ ل ڤێرە تو دشیای لینکێ خۆ بنێری و ڤیدیۆیێ دابەزینی.\n"
         f"💰 Balance-ێ تە: `{bal}` Key\n\n"
-        "🔗 لینکێ خۆ ل خوارێ بنێرە یاخود ڤێرە تاقەتبکە!\n\n"
         "👑 خودان: @YUSEEF_SURCHI"
     )
     kb = InlineKeyboardMarkup([
@@ -124,10 +127,11 @@ async def legend_mx_claim_handler(client, callback_query: CallbackQuery):
     stats = user_stats.setdefault(user_id, {
         "balance": 0, "last_claim_time": 0, "downloads_count": 0, 
         "success_count": 0, "links_count": 0, "rank": "⭐ ئەندامێ نوو", 
-        "last_links": [], "bonus_claimed": False, "legend_mx_active": False
+        "last_links": [], "bonus_claimed": False, "legend_mx_active": False,
+        "daily_code": f"MX-DAY-{user_id}-{random.randint(1000, 9999)}", "last_daily_time": 0,
+        "claimed_legend_codes": set()
     })
     
-    # 3 hours = 3 * 3600 seconds = 10800 seconds
     cooldown_period = 3 * 3600
     time_passed = current_t - stats["last_claim_time"]
     
@@ -135,7 +139,7 @@ async def legend_mx_claim_handler(client, callback_query: CallbackQuery):
         remaining = int(cooldown_period - time_passed)
         hrs = remaining // 3600
         mins = (remaining % 3600) // 60
-        await callback_query.answer(f"⏳ هێدی برا! پێدڤییە تو چاڤەڕێی {hrs} دەمژمێر و {mins} خولەک بن بۆ وەرگرتنا خەلاتا نوو یا 10 Key.", show_alert=True)
+        await callback_query.answer(f"⏳ چاڤەڕێی {hrs} دەمژمێر و {mins} خولەک بن بۆ وەرگرتنا خەلاتا نوو.", show_alert=True)
         return
         
     stats["last_claim_time"] = current_t
@@ -163,31 +167,20 @@ async def profile_callback_handler(client, callback_query: CallbackQuery):
     stats = user_stats.setdefault(user_id, {
         "name": user_name, "username": user_username, "links_count": 0,
         "downloads_count": 0, "success_count": 0, "rank": "⭐ ئەندامێ نوو", 
-        "last_links": [], "bonus_claimed": False, "balance": 0, "last_claim_time": 0, "legend_mx_active": False
+        "last_links": [], "bonus_claimed": False, "balance": 0, "last_claim_time": 0, 
+        "legend_mx_active": False, "daily_code": f"MX-DAY-{user_id}-{random.randint(1000, 9999)}", "last_daily_time": 0,
+        "claimed_legend_codes": set()
     })
-
-    total_l = stats['links_count']
-    total_d = stats['downloads_count']
-    bal = stats['balance']
-    success_rate = "100%" if total_d > 0 or total_l > 0 else "0%"
-    history_str = "\n".join([f"• `{lnk}`" for lnk in stats['last_links'][-3:]]) if stats['last_links'] else "تە هێشتا چ لینک نەناردینە."
 
     profile_text = (
         f"╔═════════════════════════╗\n"
-        f"     👤 **پروفایلا تەیێ تڕلیۆنی و پێشکەفتى**     \n"
+        f"     👤 **پروفایلا تە یێ تڕلیۆنی**     \n"
         f"╚═════════════════════════╝\n\n"
-        f"🔹 **زانیاریێن کەسایەتی:**\n"
-        f"• ناڤێ تە: `{stats['name']}`\n"
-        f"• یوزەرێر: `{stats['username']}`\n"
-        f"• ئای دی (ID): `{user_id}`\n"
-        f"• پلە و ڕێزبەندی: `{stats['rank']}`\n"
-        f"• 💰 Balance-ێ تە: `{bal}` Key\n\n"
-        f"📊 **تۆمار و ئامارێن تە:**\n"
-        f"• گشتی لینکێن هنارتی: `📦 {total_l}`\n"
-        f"• ڤیدیۆیێن هاتیە دابەزاندن: `📥 {total_d}`\n"
-        f"• پڕۆسەیێن سەرکەفتی: `✅ {stats['success_count']}`\n"
-        f"• ڕێژا سەرکەفتنێ: `🌟 {success_rate}`\n\n"
-        f"🔗 **دووماهیک لینکێن تە:**\n{history_str}\n\n"
+        f"🔹 ناڤ: `{stats['name']}`\n"
+        f"• 💰 Balance: `{stats['balance']}` Key\n"
+        f"• 🎁 کۆدێ خەلاتێ ڕۆژانە: `{stats['daily_code']}`\n"
+        f"• 📦 لینکێن هنارتی: `{stats['links_count']}`\n"
+        f"• 📥 داونلۆد: `{stats['downloads_count']}`\n\n"
         "👑 خودان: @YUSEEF_SURCHI"
     )
     
@@ -202,97 +195,95 @@ async def profile_callback_handler(client, callback_query: CallbackQuery):
     ])
     
     await callback_query.message.edit_text(profile_text, reply_markup=profile_kb)
-    await callback_query.answer("✨ پروفایلا تە ب سەرکەفتن هاتە نووکرن!")
+    await callback_query.answer()
 
 @app.on_callback_query(filters.regex(r"^my_downloads"))
 async def downloads_callback_handler(client, callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
-    stats = user_stats.get(user_id, {"downloads_count": 0, "success_count": 0, "balance": 0})
+    stats = user_stats.get(user_id, {"downloads_count": 0, "balance": 0})
     
     dl_text = (
         f"📥 **بەشێ ڤیدیۆیێن داونلۆدكری:**\n\n"
-        f"✨ هەتا نوکە تە ب دەستخستنا خۆ **{stats['downloads_count']}** فایل ب کوالیتیا بلندا 4K، MP4 و MP3 دابەزاندینە.\n"
-        f"💰 Balance-ێ تە یێ مایی: `{stats['balance']}` Key\n"
-        f"🚀 کوالیتیا سیستەمی: 100% کارا، خێرا و بێ کێشە\n\n"
+        f"✨ تە **{stats['downloads_count']}** فایل دابەزاندینە.\n"
+        f"💰 Balance-ێ مایی: `{stats['balance']}` Key\n\n"
         "👑 خودان: @YUSEEF_SURCHI"
     )
-    
-    dl_kb = InlineKeyboardMarkup([
+    kb = InlineKeyboardMarkup([
         [InlineKeyboardButton("🔙 ڤەگەر بۆ سەرەکی", callback_data="back_home")],
         [InlineKeyboardButton("👑 خودان: @YUSEEF_SURCHI", url="https://t.me/YUSEEF_SURCHI")]
     ])
-    
-    await callback_query.message.edit_text(dl_text, reply_markup=dl_kb)
+    await callback_query.message.edit_text(dl_text, reply_markup=kb)
     await callback_query.answer()
 
 @app.on_callback_query(filters.regex(r"^bot_global_stats"))
 async def global_stats_handler(client, callback_query: CallbackQuery):
     global global_total_downloads
     total_users = len(user_stats)
-    
     stats_text = (
-        f"📊 **ئامارێن گشتی یێن سیستەمێ تڕلیۆنی:**\n\n"
-        f"👥 هژمارا کاربەرێن چالاک: `{total_users}`\n"
-        f"📥 گشتی داونلۆدێن هاتیە کرن ل سیستەمی: `{global_total_downloads}`\n"
-        f"⚡️ ڕەوشا سێرڤەری: `100% کارا (Ping: 12ms)`\n\n"
+        f"📊 **ئامارێن گشتی:**\n\n"
+        f"👥 کاربەرێن چالاک: `{total_users}`\n"
+        f"📥 گشتی داونلۆد: `{global_total_downloads}`\n\n"
         "👑 خودان: @YUSEEF_SURCHI"
     )
-    
-    stats_kb = InlineKeyboardMarkup([
+    kb = InlineKeyboardMarkup([
         [InlineKeyboardButton("🔙 ڤەگەر بۆ سەرەکی", callback_data="back_home")],
         [InlineKeyboardButton("👑 خودان: @YUSEEF_SURCHI", url="https://t.me/YUSEEF_SURCHI")]
     ])
-    
-    await callback_query.message.edit_text(stats_text, reply_markup=stats_kb)
+    await callback_query.message.edit_text(stats_text, reply_markup=kb)
     await callback_query.answer()
 
 @app.on_callback_query(filters.regex(r"^bot_help"))
 async def bot_help_handler(client, callback_query: CallbackQuery):
     help_text = (
         "💡 **رێنمایێن بەکارهۆنانێ:**\n\n"
-        "1️⃣ بۆ داونلۆدکرنێ، تنێ لینکێ (تیکتۆک، اینستاگرام، یوتیوب) ل ڤێرە بنێرە.\n"
-        "2️⃣ پاشان زانیاریێن ڤیدیۆیێ دەرکەفن و تو دشیای کوالیتیا MP4 یاخود MP3 هەڵبژێری (هەر دابەزاندنەک 1 Key ژ Balance-ێ تە دبرێت).\n"
-        "3️⃣ تو دشیای هه‌ر 3 دەمژمێران جارەکێ 10 Key ژ خەلاتێن تایبەت وەرگری.\n\n"
+        "• بۆ وەرگرتنا خەلاتێ ڕۆژانە، تو دشیای کۆدێن LEGEND-MX- (ژ 24 تا 44) یاخود کۆدێ خۆ یێ تایبەت بنێری و 20 Key وەرگری!\n"
+        "• هەر کۆدەک ژ وان 21 کۆدان دشێت ئێکجار بکاربێ بۆ هر کاربەری.\n\n"
         "👑 خودان: @YUSEEF_SURCHI"
-    )
-    help_kb = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔙 ڤەگەر بۆ سەرەکی", callback_data="back_home")],
-        [InlineKeyboardButton("👑 خودان: @YUSEEF_SURCHI", url="https://t.me/YUSEEF_SURCHI")]
-    ])
-    await callback_query.message.edit_text(help_text, reply_markup=help_kb)
-    await callback_query.answer()
-
-@app.on_callback_query(filters.regex(r"^system_status"))
-async def system_status_handler(client, callback_query: CallbackQuery):
-    status_text = (
-        "⚙️ **سیستەم و پشکنینا خێراتیێ:**\n\n"
-        "• پەتەیا سێرڤەری (Server Status): `Online & Secure`\n"
-        "• پێکۆیا لۆدێ (CPU Load): `1.2% (Normal)`\n"
-        "• پاشەکەوتا سێرڤەری (Auto-Clean): `Active`\n"
-        "• گەشەپێدەر و خودان: `@YUSEEF_SURCHI`\n\n"
-        "✨ هەمی پڕۆسە ب کوالیتیا بلند کار دکەن!"
     )
     kb = InlineKeyboardMarkup([
         [InlineKeyboardButton("🔙 ڤەگەر بۆ سەرەکی", callback_data="back_home")],
         [InlineKeyboardButton("👑 خودان: @YUSEEF_SURCHI", url="https://t.me/YUSEEF_SURCHI")]
     ])
+    await callback_query.message.edit_text(help_text, reply_markup=kb)
+    await callback_query.answer()
+
+@app.on_callback_query(filters.regex(r"^system_status"))
+async def system_status_handler(client, callback_query: CallbackQuery):
+    status_text = "⚙️ **سیستەم ب ڕێکوپێکی کار دکەت.**\n\n👑 خودان: @YUSEEF_SURCHI"
+    kb = InlineKeyboardMarkup([
+        [InlineKeyboardButton("🔙 ڤەگەر بۆ سەرەکی", callback_data="back_home")],
+        [InlineKeyboardButton("👑 خودان: @YUSEEF_SURCHI", url="https://t.me/YUSEEF_SURCHI")]
+    ])
     await callback_query.message.edit_text(status_text, reply_markup=kb)
-    await callback_query.answer("⚙️ ڕەوشا سیستەمی ب سەرکەفتن هاتە پشکنین!")
+    await callback_query.answer()
 
 @app.on_callback_query(filters.regex(r"^daily_bonus"))
 async def daily_bonus_handler(client, callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
-    stats = user_stats.setdefault(user_id, {"downloads_count": 0, "bonus_claimed": False, "balance": 0})
+    current_time = time.time()
     
-    if stats.get("bonus_claimed", False):
-        await callback_query.answer("⚠️ تە خەلاتێ خۆ یێ ڕۆژانە وەرگرتیە!", show_alert=True)
+    stats = user_stats.setdefault(user_id, {
+        "balance": 0, "downloads_count": 0, "success_count": 0, "links_count": 0, 
+        "rank": "⭐ ئەندامێ نوو", "last_links": [], "legend_mx_active": False,
+        "daily_code": f"MX-DAY-{user_id}-{random.randint(1000, 9999)}", "last_daily_time": 0,
+        "claimed_legend_codes": set()
+    })
+    
+    cooldown_day = 86400
+    if current_time - stats["last_daily_time"] < cooldown_day:
+        remaining = int(cooldown_day - (current_time - stats["last_daily_time"]))
+        hrs = remaining // 3600
+        mins = (remaining % 3600) // 60
+        await callback_query.answer(f"⏳ خەلاتێ ڕۆژانە تنێ جارەکێ د 24 دەمژمێران دا هێتە وەرگرتن! چاڤەڕێی {hrs} کژمێر و {mins} خولەک بن.", show_alert=True)
         return
         
-    stats["bonus_claimed"] = True
-    stats["balance"] += 20  # Daily bonus 20 keys for users
+    stats["last_daily_time"] = current_time
+    stats["balance"] += 20
+    
     bonus_text = (
-        "🎁 **پیرۆزە! تە خەلاتێ خۆ یێ ڕۆژانە وەرگرت:**\n\n"
-        "✨ **+20 Key** بۆ Balance-ێ تە هاتە زێدەکرن!\n"
+        f"🎁 **پیرۆزە! خەلاتێ ڕۆژانە ب سەرکەفتن هاتە وەرگرتن:**\n\n"
+        f"✨ **+20 Key** بۆ Balance-ێ تە هاتە زێدەکرن!\n"
+        f"🔑 کۆدێ تەیێ تایبەتێ ڕۆژانە: `{stats['daily_code']}`\n"
         f"💰 Balance-ێ نوو: `{stats['balance']}` Key\n\n"
         "👑 خودان: @YUSEEF_SURCHI"
     )
@@ -301,7 +292,7 @@ async def daily_bonus_handler(client, callback_query: CallbackQuery):
         [InlineKeyboardButton("👑 خودان: @YUSEEF_SURCHI", url="https://t.me/YUSEEF_SURCHI")]
     ])
     await callback_query.message.edit_text(bonus_text, reply_markup=kb)
-    await callback_query.answer("🎉 خەلات ب سەرکەفتن هاتە وەرگرتن!")
+    await callback_query.answer("🎉 20 Key ب سەرکەفتن هاتنە زێدکرن!")
 
 @app.on_callback_query(filters.regex(r"^back_home"))
 async def back_home_handler(client, callback_query: CallbackQuery):
@@ -311,10 +302,10 @@ async def back_home_handler(client, callback_query: CallbackQuery):
 
     welcome_text = (
         f"🌟 سڵاو ل تە هەڤاڵێ خۆشەویست {user_name}!\n\n"
-        "🔥🔥 بخێرهاتن بۆ لابا سەرەکی یا هێزدارترین سیستەمێ داونلۆدکرنێ یێ جیهانێ (تیکتۆک، اینستاگرام، و یوتیوب) ب کوالیتیا 4K و MP3 ب ناڤێ ڕاستەقینە!\n\n"
+        "🔥🔥 بخێرهاتن بۆ لابا سەرەکی یا هێزدارترین سیستەمێ داونلۆدکرنێ یێ جیهانێ!\n\n"
         f"💰 Balance-ێ تە: `{bal}` Key\n\n"
         "👑 خودان و دامەزرێنەرێ ڕەها: @YUSEEF_SURCHI\n\n"
-        "🔗 بۆ دەستپێکرنێ، لینکێ خۆ بۆ من بنێرە یان دوگمەیێن خوارێ بکاربينە!"
+        "🔗 بۆ دەستپێکرنێ، لینکێ خۆ بۆ من بنێرە یاخود دوگمەیێن خوارێ بکاربينە!"
     )
     await callback_query.message.edit_text(welcome_text, reply_markup=get_main_menu_keyboard())
     await callback_query.answer()
@@ -328,46 +319,72 @@ async def downloader_core_handler(client, message: Message):
 
     user_name = message.from_user.first_name or "User"
     user_username = f"@{message.from_user.username}" if message.from_user.username else "نەدیار"
-    url_link = message.text.strip()
+    text_input = message.text.strip()
     
     if user_id not in user_stats:
         user_stats[user_id] = {
             "name": user_name, "username": user_username, "links_count": 0, 
             "downloads_count": 0, "success_count": 0, "rank": "⭐ ئەندامێ نوو", 
-            "last_links": [], "bonus_claimed": False, "balance": 0, "last_claim_time": 0, "legend_mx_active": False
+            "last_links": [], "bonus_claimed": False, "balance": 0, "last_claim_time": 0, 
+            "legend_mx_active": False, "daily_code": f"MX-DAY-{user_id}-{random.randint(1000, 9999)}", "last_daily_time": 0,
+            "claimed_legend_codes": set()
         }
 
-    # Anti-Spam protection (3 seconds delay)
+    # پشکنینا کۆدێ تایبەت یێ کاربەری
+    if text_input == user_stats[user_id]["daily_code"]:
+        current_time = time.time()
+        cooldown_day = 86400
+        if current_time - user_stats[user_id]["last_daily_time"] < cooldown_day:
+            remaining = int(cooldown_day - (current_time - user_stats[user_id]["last_daily_time"]))
+            hrs = remaining // 3600
+            mins = (remaining % 3600) // 60
+            await message.reply_text(f"⏳ تە ڤی کۆدی بەدەر وەرگرتیە! چاڤەڕێی {hrs} کژمێر و {mins} خولەک بن.")
+            return
+            
+        user_stats[user_id]["last_daily_time"] = current_time
+        user_stats[user_id]["balance"] += 20
+        await message.reply_text(
+            f"🎁 **پیرۆزە! کۆدێ ڕۆژانە ب سەرکەفتن هاتە کارکرن:**\n\n"
+            f"✨ **+20 Key** بۆ Balance-ێ تە هاتە زێدەکرن!\n"
+            f"💰 Balance-ێ نوو: `{user_stats[user_id]['balance']}` Key\n\n"
+            "👑 خودان: @YUSEEF_SURCHI"
+        )
+        return
+
+    # پشکنینا 21 کۆدێن LEGEND-MX- (ژ 24 تا 44)
+    if text_input in LEGEND_DAILY_CODES:
+        if text_input in user_stats[user_id]["claimed_legend_codes"]:
+            await message.reply_text("❌ تو ڤی کۆدی پێشتر تە وەرگرتیە و تنێ جارەکێ دکارى بکاربيني!\n\n👑 خودان: @YUSEEF_SURCHI")
+            return
+            
+        user_stats[user_id]["claimed_legend_codes"].add(text_input)
+        reward_keys = LEGEND_DAILY_CODES[text_input]
+        user_stats[user_id]["balance"] += reward_keys
+        await message.reply_text(
+            f"🎉 **پیرۆزە! کۆدێ `{text_input}` ب سەرکەفتن کارکر:**\n\n"
+            f"✨ **+{reward_keys} Key** بۆ Balance-ێ تە هاتە زێدەکرن!\n"
+            f"💰 Balance-ێ نوو: `{user_stats[user_id]['balance']}` Key\n\n"
+            "👑 خودان: @YUSEEF_SURCHI"
+        )
+        return
+
     current_time = time.time()
     if user_id in user_cooldown and current_time - user_cooldown[user_id] < 3:
-        await message.reply_text("⚠️ هێدی برا! تنێ ٣ چرکان چاڤەڕێ بکە بەرى کو لینکەکا دی بنێری.")
+        await message.reply_text("⚠️ هێدی برا! تنێ ٣ چرکان چاڤەڕێ بکە.")
         return
     user_cooldown[user_id] = current_time
 
-    if not url_link.startswith("http") or not any(x in url_link.lower() for x in ["tiktok", "instagram", "insta.gram", "youtube", "youtu.be", "vm.tiktok", "facebook", "fb.watch", "pinterest"]):
-        err_kb = InlineKeyboardMarkup([
-            [InlineKeyboardButton("🔙 ڤەگەر بۆ سەرەکی", callback_data="back_home")],
-            [InlineKeyboardButton("👑 خودان: @YUSEEF_SURCHI", url="https://t.me/YUSEEF_SURCHI")]
-        ])
+    if not text_input.startswith("http") or not any(x in text_input.lower() for x in ["tiktok", "instagram", "insta.gram", "youtube", "youtu.be", "vm.tiktok", "facebook", "fb.watch", "pinterest"]):
         await message.reply_text(
-            "⚠️ برا، تنێ لینکێن **تیکتۆک، اینستاگرام، و یوتیوب** ل لابا من کار دکەن! هیڤیە لینکەکا دروست بۆ من بنێرە.\n\n"
-            "👑 خودان: @YUSEEF_SURCHI",
-            reply_markup=err_kb
+            "⚠️ لینکێ خەلتە یان کۆدێ نەدروست! هیڤیە لینکەکا دروست یان کۆدەکێ ڕاست بنێرە.\n\n"
+            "👑 خودان: @YUSEEF_SURCHI"
         )
         return
 
     user_stats[user_id]["links_count"] += 1
-    total_user_links = user_stats[user_id]["links_count"]
-    
-    if url_link not in user_stats[user_id]["last_links"]:
-        user_stats[user_id]["last_links"].append(url_link)
-        if len(user_stats[user_id]["last_links"]) > 5:
-            user_stats[user_id]["last_links"].pop(0)
+    url_link = text_input
 
-    process_msg = await message.reply_text(
-        f"⚡️ Mx Video Download Lab کار دکەت (کاربەر: {user_name} | لینکێن تە: {total_user_links}): نوکە زانیاریێن ڤیدیۆیێ دئینم خوارێ...\n\n"
-        "👑 خودان: @YUSEEF_SURCHI"
-    )
+    process_msg = await message.reply_text("⚡️ زانیاریێن ڤیدیۆیێ دئینم خوارێ...\n\n👑 خودان: @YUSEEF_SURCHI")
 
     try:
         ydl_opts = {
@@ -378,25 +395,9 @@ async def downloader_core_handler(client, message: Message):
         with YoutubeDL(ydl_opts) as ydl:
             video_info = ydl.extract_info(url_link, download=False)
             vid_title = video_info.get('title', 'Hyper Supreme Media')
-            uploader = video_info.get('uploader', 'نەدیار (Unknown)')
+            uploader = video_info.get('uploader', 'نەدیار')
             views = video_info.get('view_count', 'نەدیار')
             likes = video_info.get('like_count', 'نەدیار')
-            comments = video_info.get('comment_count', 'نەدیار')
-            shares = video_info.get('repost_count', video_info.get('share_count', 'نەدیار'))
-            
-            raw_duration = video_info.get('duration', 0)
-            if not raw_duration and 'entries' in video_info:
-                try:
-                    raw_duration = video_info['entries'][0].get('duration', 0)
-                except:
-                    pass
-            
-            if raw_duration:
-                mins = int(raw_duration // 60)
-                secs = int(raw_duration % 60)
-                vid_time_str = f"{mins} دەقە و {secs} چرکه" if mins > 0 else f"{secs} چرکه"
-            else:
-                vid_time_str = "تەواڤ"
 
         bal = user_stats[user_id]["balance"]
         action_kb = InlineKeyboardMarkup([
@@ -414,27 +415,16 @@ async def downloader_core_handler(client, message: Message):
         
         await process_msg.edit_text(
             f"📥 **Mx Video Download Lab Info:**\n"
-            f"👤 نڤێسەر/کەسێ لینک هنارتی: {user_name} ({user_username})\n"
-            f"💰 Balance-ێ تە: `{bal}` Key (هەر داونلۆدەک 1 Key دبرێت)\n\n"
+            f"💰 Balance-ێ تە: `{bal}` Key\n\n"
             f"🎬 ناڤێ بابەتی: {vid_title}\n"
-            f"👤 خودانێ ڤیدیۆیێ: {uploader}\n"
-            f"⏱ دەمێ ڤیدیۆیێ: {vid_time_str}\n"
-            f"👁 دیتیار (Views): {views}\n"
-            f"❤️ لایک (Likes): {likes}\n\n"
-            "کوالیتیا خۆ هەڵبژێرە بۆ داونلۆدکرنێ 👇\n\n"
-            "👑 خودان و بەرپرس: @YUSEEF_SURCHI",
+            f"👤 خودان: {uploader}\n"
+            f"👁 دیتیار: {views} | ❤️ لایک: {likes}\n\n"
+            "کوالیتیا خۆ هەڵبژێرە 👇\n\n"
+            "👑 خودان: @YUSEEF_SURCHI",
             reply_markup=action_kb
         )
     except Exception as err:
-        err_kb = InlineKeyboardMarkup([
-            [InlineKeyboardButton("🔙 ڤەگەر بۆ سەرەکی", callback_data="back_home")],
-            [InlineKeyboardButton("👑 خودان: @YUSEEF_SURCHI", url="https://t.me/YUSEEF_SURCHI")]
-        ])
-        await process_msg.edit_text(
-            f"❌ هەڵەیەک ڕوویدا د وەرگرتنا زانیاریان دا:\n`{str(err)}`\n\n"
-            "👑 خودان: @YUSEEF_SURCHI",
-            reply_markup=err_kb
-        )
+        await process_msg.edit_text(f"❌ هەڵەیەک ڕوویدا:\n`{str(err)}`\n\n👑 خودان: @YUSEEF_SURCHI")
 
 @app.on_callback_query(filters.regex(r"^dl_"))
 async def download_callback_handler(client, callback_query: CallbackQuery):
@@ -443,25 +433,19 @@ async def download_callback_handler(client, callback_query: CallbackQuery):
     data = callback_query.data
     action, url_link = data.split("|", 1)
     
-    stats = user_stats.setdefault(user_id, {"balance": 0, "downloads_count": 0, "success_count": 0, "rank": "⭐ ئەندامێ نوو"})
+    stats = user_stats.setdefault(user_id, {"balance": 0, "downloads_count": 0, "success_count": 0})
     
-    # Check if user has enough balance (1 key required per download)
     if stats["balance"] < 1:
-        await callback_query.answer("❌ Balance-ێ تە نەهنگە! پێدڤییە حداقل 1 Key هەبت بۆ داونلۆدکرنێ. (سەرا خەلاتێن 3 ساعتی بکە)", show_alert=True)
+        await callback_query.answer("❌ Balance-ێ تە نەهنگە! پێدڤییە حداقل 1 Key هەبت.", show_alert=True)
         return
 
-    # Deduct 1 key per video download
     stats["balance"] -= 1
-
     await callback_query.answer("📥 داونلۆدکرن دەست پێکر (1 Key هاتە کێمکرن)...", show_alert=False)
-    status_msg = await callback_query.message.reply_text(
-        f"⏳ خەریکە فایلێ دابەزینم بۆ تە... (Balance-ێ نوو: {stats['balance']} Key)\n\n👑 خودان: @YUSEEF_SURCHI"
-    )
+    status_msg = await callback_query.message.reply_text(f"⏳ خەریکە فایلێ دابەزینم... (Balance: {stats['balance']} Key)\n\n👑 خودان: @YUSEEF_SURCHI")
 
     filename = None
     try:
         os.makedirs("downloads", exist_ok=True)
-        
         if action == "dl_mp4":
             ydl_opts = {
                 'format': 'bestvideo+bestaudio/best',
@@ -480,11 +464,7 @@ async def download_callback_handler(client, callback_query: CallbackQuery):
                 [InlineKeyboardButton("🔙 ڤەگەر بۆ سەرەکی", callback_data="back_home")],
                 [InlineKeyboardButton("👑 خودان: @YUSEEF_SURCHI", url="https://t.me/YUSEEF_SURCHI")]
             ])
-            await callback_query.message.reply_video(
-                video=filename,
-                caption=f"🎬 ب سەرکەفتن ڤیدیۆ (MP4) هاتە داونلۆدکرن!\n💰 Balance-ێ مایی: {stats['balance']} Key\n\n👑 خودان: @YUSEEF_SURCHI",
-                reply_markup=finish_kb
-            )
+            await callback_query.message.reply_video(video=filename, caption=f"🎬 MP4 هاتە داونلۆدکرن!\n💰 Balance: {stats['balance']} Key", reply_markup=finish_kb)
             
         elif action == "dl_mp3_full":
             ydl_opts = {
@@ -502,45 +482,23 @@ async def download_callback_handler(client, callback_query: CallbackQuery):
                 [InlineKeyboardButton("🔙 ڤەگەر بۆ سەرەکی", callback_data="back_home")],
                 [InlineKeyboardButton("👑 خودان: @YUSEEF_SURCHI", url="https://t.me/YUSEEF_SURCHI")]
             ])
-            await callback_query.message.reply_audio(
-                audio=filename,
-                title=audio_title,
-                performer="YUSEEF_SURCHI",
-                caption=f"🎶 سترانا تەمام ({audio_title}) هاتە داونلۆدکرن!\n💰 Balance-ێ مایی: {stats['balance']} Key\n\n👑 خودان: @YUSEEF_SURCHI",
-                reply_markup=finish_kb
-            )
+            await callback_query.message.reply_audio(audio=filename, title=audio_title, performer="YUSEEF_SURCHI", caption=f"🎶 MP3 هاتە داونلۆدکرن!\n💰 Balance: {stats['balance']} Key", reply_markup=finish_kb)
 
         stats["downloads_count"] += 1
         stats["success_count"] += 1
-        if stats["downloads_count"] >= 10:
-            stats["rank"] = "⭐ ئەندامێ پێشکەفتى"
-        if stats["downloads_count"] >= 50:
-            stats["rank"] = "🔥 ئەندامێ زێڕین"
-        if stats["downloads_count"] >= 100:
-            stats["rank"] = "👑 ئەندامێ تڕلیۆنی"
-
         global_total_downloads += 1
 
         if filename and os.path.exists(filename):
             os.remove(filename)
-
         await status_msg.delete()
     except Exception as e:
-        # Refund key if download fails
         stats["balance"] += 1
         if filename and os.path.exists(filename):
             try:
                 os.remove(filename)
             except:
                 pass
-        err_back_kb = InlineKeyboardMarkup([
-            [InlineKeyboardButton("🔙 ڤەگەر بۆ سەرەکی", callback_data="back_home")],
-            [InlineKeyboardButton("👑 خودان: @YUSEEF_SURCHI", url="https://t.me/YUSEEF_SURCHI")]
-        ])
-        await status_msg.edit_text(
-            f"❌ هەڵەیەک ڕوویدا، Key-ێ تە بۆتە هاتە ڤەگەراندن:\n`{str(e)}`\n\n👑 خودان: @YUSEEF_SURCHI",
-            reply_markup=err_back_kb
-        )
+        await status_msg.edit_text(f"❌ هەڵەیەک ڕوویدا، Key هاتە ڤەگەراندن:\n`{str(e)}`\n\n👑 خودان: @YUSEEF_SURCHI")
 
-print("🚀 Ultimate Supreme Trillion Menu Bot (V21 - Mx Video Download Lab & LEGEND-MX-BALANCE-600 Edition) with Owner @YUSEEF_SURCHI is Running!")
+print("🚀 Ultimate Supreme Trillion Menu Bot (V21 - 21 Unique Daily Codes Edition) with Owner @YUSEEF_SURCHI is Running!")
 app.run()
