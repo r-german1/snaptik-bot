@@ -13,7 +13,7 @@ app = Client(
     api_id=API_ID,
     api_hash=API_HASH,
     bot_token=BOT_TOKEN,
-    workers=2147483647,  # Secret Hidden Multi-Trillion Max Scale Power Engine
+    workers=500,  # Optimized for Railway Cloud Servers
     sleep_threshold=0
 )
 
@@ -222,5 +222,5 @@ async def download_callback_handler(client, callback_query: CallbackQuery):
                 pass
         await status_msg.edit_text(f"❌ چەڵۆکیەک ڕوویدا د دەمێ داونلۆدکرنێ دا:\n`{str(e)}`\n\n👑 خودان: @YUSEEF_SURCHI")
 
-print("🚀 Ultimate Secret Multi-Trillion Supreme Bot with Owner @YUSEEF_SURCHI is Running!")
+print("🚀 Ultimate Secret Railway Bot with Owner @YUSEEF_SURCHI is Running!")
 app.run()
