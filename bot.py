@@ -9,7 +9,7 @@ API_HASH = os.environ.get("API_HASH", "eba4f8333cba5f9697a1d20779d4d6e9")
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8918686553:AAH405vftzUcQPQ215ZhmknM4ll0vbn1xtU")
 
 app = Client(
-    "supreme_advanced_profile_bot",
+    "supreme_trillion_ultimate_bot_surchi",
     api_id=API_ID,
     api_hash=API_HASH,
     bot_token=BOT_TOKEN,
@@ -17,7 +17,7 @@ app = Client(
     sleep_threshold=0
 )
 
-# Advanced User Stats & Profile Storage Dictionary
+# Advanced Global Storage & Trillion Stats
 user_stats = {}
 global_total_downloads = 0
 
@@ -34,12 +34,16 @@ async def start_command_handler(client, message: Message):
             "links_count": 0,
             "downloads_count": 0,
             "success_count": 0,
-            "rank": "ئەندامێ چالاک"
+            "rank": "⭐ ئەندامێ نوو"
         }
 
     welcome_text = (
         f"🌟 سڵاو ل تە هەڤاڵێ خۆشەویست {user_name}!\n\n"
-        "🔥🔥 ئەڤە هێزدارترین سیستەمێ داونلۆدکرنێ یێ بێ وێنە (تیکتۆک، اینستاگرام، و یوتیوب) ب کوالیتیا هەرە بلندا 4K و MP3 ب ناڤێ ڕاستەقینە!\n\n"
+        "🔥🔥 ئەڤە هێزدارترین و مەزنترین سیستەمێ داونلۆدکرنێ یێ جیهانێ (تیکتۆک، اینستاگرام، و یوتیوب) ب کوالیتیا 4K و MP3 ب ناڤێ ڕاستەقینە!\n\n"
+        "✨ **خاسەتیێن مەزن یێن سیستەمی:**\n"
+        "• داونلۆدکرنا بێ کێشە، خێرا و باوەڕپێکری\n"
+        "• پروفایلا تایبەت و پڕ زانیاری بۆ هڕ کاربەرەکی\n"
+        "• کۆنترۆلاکەمێن پێشکەفتى و دوگمەیێن خوەکێش\n\n"
         "👑 خودان و دامەزرێنەرێ ڕەها: @YUSEEF_SURCHI\n\n"
         "🔗 بۆ دەستپێکرنێ، لینکێ خۆ بۆ من بنێرە یان دوگمەیێن خوارێ بکاربينە!"
     )
@@ -71,20 +75,18 @@ async def profile_callback_handler(client, callback_query: CallbackQuery):
             "links_count": 0,
             "downloads_count": 0,
             "success_count": 0,
-            "rank": "ئەندامێ چالاک"
+            "rank": "⭐ ئەندامێ نوو"
         }
 
     stats = user_stats[user_id]
-    
-    # Calculate success rate safely
     total_l = stats['links_count']
     total_d = stats['downloads_count']
     success_rate = "100%" if total_d > 0 or total_l > 0 else "0%"
 
     profile_text = (
-        f"╔═══════════════════════╗\n"
-        f"     👤 **پروفایلا تەیێ تایبەت**     \n"
-        f"╚═══════════════════════╝\n\n"
+        f"╔═════════════════════════╗\n"
+        f"     👤 **پروفایلا تەیێ زێڕین و پێشکەفتى**     \n"
+        f"╚═════════════════════════╝\n\n"
         f"🔹 **زانیاریێن کەسایەتی:**\n"
         f"• ناڤێ تە: `{stats['name']}`\n"
         f"• یوزەرێر: `{stats['username']}`\n"
@@ -95,14 +97,14 @@ async def profile_callback_handler(client, callback_query: CallbackQuery):
         f"• ڤیدیۆیێن هاتیە دابەزاندن: `📥 {total_d}`\n"
         f"• پڕۆسەیێن سەرکەفتی: `✅ {stats['success_count']}`\n"
         f"• ڕێژا سەرکەفتنێ: `🌟 {success_rate}`\n\n"
-        f"💡 تێبینی: سیستەمێ تڕلیۆنی یێ بۆتی ب تەواوی زانیاریێن تە پارێزیت.\n\n"
+        f"💡 تێبینی: تەڤاهیا زانیاریێن تە ب پاراستیی دهێنە ڕێڤەبرن.\n\n"
         "👑 خودان: @YUSEEF_SURCHI"
     )
     
     profile_kb = InlineKeyboardMarkup([
         [
             InlineKeyboardButton("🔄 نووکرنا پروفایلی", callback_data="my_profile"),
-            InlineKeyboardButton("🔙 ڤەگەر", callback_data="back_home")
+            InlineKeyboardButton("🔙 ڤەگەر بۆ سەرەکی", callback_data="back_home")
         ],
         [
             InlineKeyboardButton("👑 خودان: @YUSEEF_SURCHI", url="https://t.me/YUSEEF_SURCHI")
@@ -110,7 +112,7 @@ async def profile_callback_handler(client, callback_query: CallbackQuery):
     ])
     
     await callback_query.message.edit_text(profile_text, reply_markup=profile_kb)
-    await callback_query.answer("✨ پروفایلا تە ب سەرکەفتن هاتە ڤەکرن!")
+    await callback_query.answer("✨ پروفایلا تە ب سەرکەفتن هاتە نووکرن!")
 
 @app.on_callback_query(filters.regex(r"^my_downloads"))
 async def downloads_callback_handler(client, callback_query: CallbackQuery):
@@ -120,7 +122,7 @@ async def downloads_callback_handler(client, callback_query: CallbackQuery):
     dl_text = (
         f"📥 **بەشێ ڤیدیۆیێن داونلۆدكری:**\n\n"
         f"✨ هەتا نوکە تە ب دەستخستنا خۆ **{stats['downloads_count']}** فایل ب کوالیتیا بلندا 4K و MP3 دابەزاندینە.\n"
-        f"🚀 کوالیتیا سیستەمی: 100% خێرا و بێ کێشە\n\n"
+        f"🚀 کوالیتیا سیستەمی: 100% بێ کێشە و خێرا\n\n"
         "👑 خودان: @YUSEEF_SURCHI"
     )
     
@@ -138,10 +140,10 @@ async def global_stats_handler(client, callback_query: CallbackQuery):
     total_users = len(user_stats)
     
     stats_text = (
-        f"📊 **ئامارێن گشتی یێن سیستەمی:**\n\n"
-        f"👥 هژمارا کاربەرێن چالاک: {total_users}\n"
-        f"📥 گشتی داونلۆدێن هاتیە کرن ل سیستەمی: {global_total_downloads}\n"
-        f"⚡️ ڕەوشا سێرڤەری: 100% کارا و بێ کێشە\n\n"
+        f"📊 **ئامارێن گشتی یێن سیستەمێ تڕلیۆنی:**\n\n"
+        f"👥 هژمارا کاربەرێن چالاک: `{total_users}`\n"
+        f"📥 گشتی داونلۆدێن هاتیە کرن ل سیستەمی: `{global_total_downloads}`\n"
+        f"⚡️ ڕەوشا سێرڤەری: `100% کارا و بێ کێشە`\n\n"
         "👑 خودان: @YUSEEF_SURCHI"
     )
     
@@ -158,7 +160,7 @@ async def back_home_handler(client, callback_query: CallbackQuery):
     user_name = callback_query.from_user.first_name or "User"
     welcome_text = (
         f"🌟 سڵاو ل تە هەڤاڵێ خۆشەویست {user_name}!\n\n"
-        "🔥🔥 ئەڤە هێزدارترین سیستەمێ داونلۆدکرنێ یێ بێ وێنە (تیکتۆک، اینستاگرام، و یوتیوب) ب کوالیتیا هەرە بلندا 4K و MP3 ب ناڤێ ڕاستەقینە!\n\n"
+        "🔥🔥 ئەڤە هێزدارترین و مەزنترین سیستەمێ داونلۆدکرنێ یێ جیهانێ (تیکتۆک، اینستاگرام، و یوتیوب) ب کوالیتیا 4K و MP3 ب ناڤێ ڕاستەقینە!\n\n"
         "👑 خودان و دامەزرێنەرێ ڕەها: @YUSEEF_SURCHI\n\n"
         "🔗 بۆ دەستپێکرنێ، لینکێ خۆ بۆ من بنێرە یان دوگمەیێن خوارێ بکاربينە!"
     )
@@ -185,10 +187,11 @@ async def downloader_core_handler(client, message: Message):
     url_link = message.text.strip()
     
     if user_id not in user_stats:
-        user_stats[user_id] = {"name": user_name, "username": user_username, "links_count": 0, "downloads_count": 0, "success_count": 0, "rank": "ئەندامێ چالاک"}
+        user_stats[user_id] = {"name": user_name, "username": user_username, "links_count": 0, "downloads_count": 0, "success_count": 0, "rank": "⭐ ئەندامێ نوو"}
 
     if not url_link.startswith("http") or not any(x in url_link.lower() for x in ["tiktok", "instagram", "insta.gram", "youtube", "youtu.be", "vm.tiktok"]):
         err_kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔙 ڤەگەر بۆ سەرەکی", callback_data="back_home")],
             [InlineKeyboardButton("👑 خودان: @YUSEEF_SURCHI", url="https://t.me/YUSEEF_SURCHI")]
         ])
         await message.reply_text(
@@ -202,7 +205,7 @@ async def downloader_core_handler(client, message: Message):
     total_user_links = user_stats[user_id]["links_count"]
 
     process_msg = await message.reply_text(
-        f"⚡️ سیستەمێ پێشکەفتى کار دکەت (کاربەر: {user_name} | لینکێن تە: {total_user_links}): نوکە زانیاریێن ڤیدیۆیێ دئینم خوارێ...\n\n"
+        f"⚡️ سیستەم کار دکەت (کاربەر: {user_name} | لینکێن تە: {total_user_links}): نوکە زانیاریێن ڤیدیۆیێ دئینم خوارێ...\n\n"
         "👑 خودان: @YUSEEF_SURCHI"
     )
 
@@ -241,6 +244,9 @@ async def downloader_core_handler(client, message: Message):
                 InlineKeyboardButton("🎵 داونلۆدکرنا MP3", callback_data=f"dl_mp3_full|{url_link}")
             ],
             [
+                InlineKeyboardButton("🔙 ڤەگەر بۆ سەرەکی", callback_data="back_home")
+            ],
+            [
                 InlineKeyboardButton("👑 خودان: @YUSEEF_SURCHI", url="https://t.me/YUSEEF_SURCHI")
             ]
         ])
@@ -261,6 +267,7 @@ async def downloader_core_handler(client, message: Message):
         )
     except Exception as err:
         err_kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔙 ڤەگەر بۆ سەرەکی", callback_data="back_home")],
             [InlineKeyboardButton("👑 خودان: @YUSEEF_SURCHI", url="https://t.me/YUSEEF_SURCHI")]
         ])
         await process_msg.edit_text(
@@ -299,9 +306,14 @@ async def download_callback_handler(client, callback_query: CallbackQuery):
                 if not filename.endswith('.mp4'):
                     filename = os.path.splitext(filename)[0] + '.mp4'
 
+            finish_kb = InlineKeyboardMarkup([
+                [InlineKeyboardButton("🔙 ڤەگەر بۆ سەرەکی", callback_data="back_home")],
+                [InlineKeyboardButton("👑 خودان: @YUSEEF_SURCHI", url="https://t.me/YUSEEF_SURCHI")]
+            ])
             await callback_query.message.reply_video(
                 video=filename,
-                caption="🎬 ب سەرکەفتن ڤیدیۆ (MP4) ب کوالیتیا بلند هاتە داونلۆدکرن!\n\n👑 خودان: @YUSEEF_SURCHI"
+                caption="🎬 ب سەرکەفتن ڤیدیۆ (MP4) ب کوالیتیا بلند هاتە داونلۆدکرن!\n\n👑 خودان: @YUSEEF_SURCHI",
+                reply_markup=finish_kb
             )
             
         elif action == "dl_mp3_full":
@@ -316,21 +328,27 @@ async def download_callback_handler(client, callback_query: CallbackQuery):
                 filename = ydl.prepare_filename(info)
 
             audio_title = info.get('title', 'Full Song')
+            finish_kb = InlineKeyboardMarkup([
+                [InlineKeyboardButton("🔙 ڤەگەر بۆ سەرەکی", callback_data="back_home")],
+                [InlineKeyboardButton("👑 خودان: @YUSEEF_SURCHI", url="https://t.me/YUSEEF_SURCHI")]
+            ])
             await callback_query.message.reply_audio(
                 audio=filename,
                 title=audio_title,
                 performer="YUSEEF_SURCHI",
-                caption=f"🎶 سترانا تەمام ({audio_title}) ب کوالیتیا بلند و ب ناڤێ ڕاستەقینە هاتە داونلۆدکرن!\n\n👑 خودان: @YUSEEF_SURCHI"
+                caption=f"🎶 سترانا تەمام ({audio_title}) ب کوالیتیا بلند و ب ناڤێ ڕاستەقینە هاتە داونلۆدکرن!\n\n👑 خودان: @YUSEEF_SURCHI",
+                reply_markup=finish_kb
             )
 
         if user_id in user_stats:
             user_stats[user_id]["downloads_count"] += 1
             user_stats[user_id]["success_count"] += 1
-            # Auto update rank based on downloads
             if user_stats[user_id]["downloads_count"] >= 10:
                 user_stats[user_id]["rank"] = "⭐ ئەندامێ پێشکەفتى"
             if user_stats[user_id]["downloads_count"] >= 50:
                 user_stats[user_id]["rank"] = "🔥 ئەندامێ زێڕین"
+            if user_stats[user_id]["downloads_count"] >= 100:
+                user_stats[user_id]["rank"] = "👑 ئەندامێ تڕلیۆنی"
 
         global_total_downloads += 1
 
@@ -344,7 +362,14 @@ async def download_callback_handler(client, callback_query: CallbackQuery):
                 os.remove(filename)
             except:
                 pass
-        await status_msg.edit_text(f"❌ چەڵۆکیەک ڕوویدا د دەمێ داونلۆدکرنێ دا:\n`{str(e)}`\n\n👑 خودان: @YUSEEF_SURCHI")
+        err_back_kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔙 ڤەگەر بۆ سەرەکی", callback_data="back_home")],
+            [InlineKeyboardButton("👑 خودان: @YUSEEF_SURCHI", url="https://t.me/YUSEEF_SURCHI")]
+        ])
+        await status_msg.edit_text(
+            f"❌ چەڵۆکیەک ڕوویدا د دەمێ داونلۆدکرنێ دا:\n`{str(e)}`\n\n👑 خودان: @YUSEEF_SURCHI",
+            reply_markup=err_back_kb
+        )
 
-print("🚀 Ultimate Supreme Advanced Profile Bot with Owner @YUSEEF_SURCHI is Running!")
+print("🚀 Ultimate Supreme Trillion Bot with Owner @YUSEEF_SURCHI is Running Perfectly!")
 app.run()
