@@ -1,9 +1,3 @@
-pyrogram==2.0.106
+pyrogram
 tgcrypto
-yt-dlp>=2024.03.10
-aiohttp
-requests
-certifi
-ffmpeg-python
-redis
-pymongo
+yt-dlp
