@@ -5,15 +5,16 @@ import random
 import string
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, CallbackQuery
+from pyrogram.errors import UserNotParticipant
 from yt_dlp import YoutubeDL
 
 API_ID = int(os.environ.get("API_ID", "34584240"))
 API_HASH = os.environ.get("API_HASH", "eba4f8333cba5f9697a1d20779d4d6e9")
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8918686553:AAH405vftzUcQPQ215ZhmknM4ll0vbn1xtU")
-OWNER_ID = int(os.environ.get("OWNER_ID", "0"))
+REQUIRED_CHANNEL = "LEGEND_MODS33"  # ناڤێ چەنەلا مەرجدار بۆ پشکداریێ
 
 app = Client(
-    "supreme_trillion_ultimate_v24_surchi_mx",
+    "supreme_trillion_ultimate_v25_surchi_mx",
     api_id=API_ID,
     api_hash=API_HASH,
     bot_token=BOT_TOKEN,
@@ -26,20 +27,29 @@ global_total_downloads = 0
 user_cooldown = {}
 banned_users = set()
 
-# دروستکرنا 75 کۆدێن ڤەشارتى (Hidden Codes) کو هەر ئێک 600 Balance ددەت و تنێ 2 کەس دکارن بکاربینن
-secret_code_usage_count = {}  # بۆ هژمارکرنا ID یێن وان کەسان یێن کۆدی بکارئینای
-global_claimed_secret_users = set()
+secret_code_usage_count = {}
 
 def generate_75_hidden_codes():
     codes = {}
     for _ in range(75):
         random_suffix = ''.join(random.choices(string.ascii_uppercase + string.digits, k=11))
         code = f"LEGEND-MX-{random_suffix}"
-        codes[code] = 600  # هەر ئێک 600 Balance ددەت!
+        codes[code] = 600
         secret_code_usage_count[code] = set()
     return codes
 
 LEGEND_75_SECRET_CODES = generate_75_hidden_codes()
+
+async def check_user_channel_membership(client, user_id):
+    try:
+        member = await client.get_chat_member(REQUIRED_CHANNEL, user_id)
+        if member.status in ["creator", "administrator", "member"]:
+            return True
+    except UserNotParticipant:
+        return False
+    except Exception:
+        pass
+    return False
 
 def get_main_menu_keyboard():
     return InlineKeyboardMarkup([
@@ -52,7 +62,6 @@ def get_main_menu_keyboard():
             InlineKeyboardButton("🎁 خەلاتێن 3 ساعتی (10 Key)", callback_data="legend_mx_claim")
         ],
         [
-            InlineKeyboardButton("📢 چەنەلا خەلاتێ 24 دەمژمێری (50 Key)", callback_data="channel_daily_bonus"),
             InlineKeyboardButton("🎁 خەلاتێن ڕۆژانە (کۆدێ 75 Key)", callback_data="daily_bonus")
         ],
         [
@@ -72,6 +81,20 @@ async def start_command_handler(client, message: Message):
         await message.reply_text("❌ لێبوورین، تو هاتیە بلۆککرن ژ کارئینانا ڤی بۆتی.")
         return
 
+    is_member = await check_user_channel_membership(client, user_id)
+    if not is_member:
+        join_kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton("📢 پشکداربوون د چەنەلێ دا", url="https://t.me/LEGEND_MODS33")],
+            [InlineKeyboardButton("🔄 پشکنینا پشکداریێ (Check)", callback_data="check_membership")]
+        ])
+        await message.reply_text(
+            "⚠️ **بۆ کارئینانا ڤی بۆتی، دڤێت پێش هەمی تشتن پشکدار بی د چەنەما مە دا:**\n\n"
+            "🔗 https://t.me/LEGEND_MODS33\n\n"
+            "پشتی پشکداربوونێ، دوگمەیا پشکنینێ کلیک بکە! 👇",
+            reply_markup=join_kb
+        )
+        return
+
     user_name = message.from_user.first_name or "User"
     user_username = f"@{message.from_user.username}" if message.from_user.username else "نەدیار"
 
@@ -86,10 +109,9 @@ async def start_command_handler(client, message: Message):
             "rank": "⭐ ئەندامێ نوو",
             "last_links": [],
             "bonus_claimed": False,
-            "balance": 50,
+            "balance": 0,  # دەستپێکرنا ب 0 Key
             "last_claim_time": 0,
             "last_daily_time": 0,
-            "last_channel_claim": 0,
             "legend_mx_active": False,
             "daily_code": unique_daily_code,
             "claimed_secret_codes": set()
@@ -109,49 +131,44 @@ async def start_command_handler(client, message: Message):
     
     await message.reply_text(welcome_text, reply_markup=get_main_menu_keyboard())
 
-@app.on_callback_query(filters.regex(r"^channel_daily_bonus"))
-async def channel_daily_bonus_handler(client, callback_query: CallbackQuery):
+@app.on_callback_query(filters.regex(r"^check_membership"))
+async def check_membership_handler(client, callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
-    current_t = time.time()
+    is_member = await check_user_channel_membership(client, user_id)
     
-    stats = user_stats.setdefault(user_id, {
-        "balance": 50, "last_channel_claim": 0, "downloads_count": 0, 
-        "success_count": 0, "links_count": 0, "rank": "⭐ ئەندامێ نوو", 
-        "last_links": [], "bonus_claimed": False, "legend_mx_active": False,
-        "daily_code": f"MX-DAY-{user_id}-{random.randint(1000, 9999)}", "last_daily_time": 0,
-        "claimed_secret_codes": set()
-    })
-    
-    cooldown_24h = 86400
-    time_passed = current_t - stats["last_channel_claim"]
-    
-    if time_passed < cooldown_24h:
-        remaining = int(cooldown_24h - time_passed)
-        hrs = remaining // 3600
-        mins = (remaining % 3600) // 60
-        await callback_query.answer(f"⏳ چاڤەڕێی {hrs} دەمژمێر و {mins} خولەک بن بۆ وەرگرتنا خەلاتا چەنەلێ یا نوو.", show_alert=True)
+    if not is_member:
+        await callback_query.answer("❌ تو هێشتا پشکدار نینەی د چەنەلێ دا!", show_alert=True)
         return
-        
-    stats["last_channel_claim"] = current_t
-    stats["balance"] += 50
+
+    await callback_query.answer("✅ پشکداری هاتە پەسەندکرن!", show_alert=True)
     
-    chan_text = (
-        "📢 **پیرۆزە! خەلاتێ چەنەلێ یێ 24 دەمژمێری ب سەرکەفتن هاتە وەرگرتن:**\n\n"
-        "✨ **+50 Key** بۆ Balance-ێ تە هاتە زێدەکرن!\n"
-        f"💰 Balance-ێ تە یێ نوو: `{stats['balance']}` Key\n\n"
-        "👑 خودان: @YUSEEF_SURCHI"
+    user_name = callback_query.from_user.first_name or "User"
+    user_username = f"@{callback_query.from_user.username}" if callback_query.from_user.username else "نەدیار"
+
+    if user_id not in user_stats:
+        unique_daily_code = f"MX-DAY-{user_id}-{random.randint(1000, 9999)}"
+        user_stats[user_id] = {
+            "name": user_name, "username": user_username, "links_count": 0,
+            "downloads_count": 0, "success_count": 0, "rank": "⭐ ئەندامێ نوو", 
+            "last_links": [], "bonus_claimed": False, "balance": 0, "last_claim_time": 0, 
+            "legend_mx_active": False, "daily_code": unique_daily_code, "last_daily_time": 0,
+            "claimed_secret_codes": set()
+        }
+
+    current_bal = user_stats[user_id]['balance']
+    welcome_text = (
+        f"🌟 سڵاو ل تە هەڤاڵێ خۆشەویست {user_name}!\n\n"
+        "🔥🔥 بخێرهاتن بۆ لابا سەرەکی یا هێزدارترین سیستەمێ داونلۆدکرنێ!\n\n"
+        f"💰 Balance-ێ تە: `{current_bal}` Key\n\n"
+        "👑 خودان: @YUSEEF_SURCHI\n\n"
+        "🔗 بۆ دەستپێکرنێ، لینکێ خۆ بۆ من بنێرە یاخود دوگمەیێن خوارێ بکاربينە!"
     )
-    kb = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🔙 ڤەگەر بۆ سەرەکی", callback_data="back_home")],
-        [InlineKeyboardButton("👑 خودان: @YUSEEF_SURCHI", url="https://t.me/YUSEEF_SURCHI")]
-    ])
-    await callback_query.message.edit_text(chan_text, reply_markup=kb)
-    await callback_query.answer("🎉 50 Key ژ چەنەلێ هاتنە وەرگرتن!")
+    await callback_query.message.edit_text(welcome_text, reply_markup=get_main_menu_keyboard())
 
 @app.on_callback_query(filters.regex(r"^mx_video_download_menu"))
 async def mx_video_download_menu_handler(client, callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
-    user_stats.setdefault(user_id, {"balance": 50})
+    user_stats.setdefault(user_id, {"balance": 0})
     bal = user_stats[user_id]["balance"]
 
     menu_text = (
@@ -170,10 +187,15 @@ async def mx_video_download_menu_handler(client, callback_query: CallbackQuery):
 @app.on_callback_query(filters.regex(r"^legend_mx_claim"))
 async def legend_mx_claim_handler(client, callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
-    current_t = time.time()
     
+    is_member = await check_user_channel_membership(client, user_id)
+    if not is_member:
+        await callback_query.answer("❌ بۆ وەرگرتنا خەلاتی، دڤێت پشکدار بی د چەنەلا مە دا: https://t.me/LEGEND_MODS33", show_alert=True)
+        return
+
+    current_t = time.time()
     stats = user_stats.setdefault(user_id, {
-        "balance": 50, "last_claim_time": 0, "downloads_count": 0, 
+        "balance": 0, "last_claim_time": 0, "downloads_count": 0, 
         "success_count": 0, "links_count": 0, "rank": "⭐ ئەندامێ نوو", 
         "last_links": [], "bonus_claimed": False, "legend_mx_active": False,
         "daily_code": f"MX-DAY-{user_id}-{random.randint(1000, 9999)}", "last_daily_time": 0,
@@ -215,7 +237,7 @@ async def profile_callback_handler(client, callback_query: CallbackQuery):
     stats = user_stats.setdefault(user_id, {
         "name": user_name, "username": user_username, "links_count": 0,
         "downloads_count": 0, "success_count": 0, "rank": "⭐ ئەندامێ نوو", 
-        "last_links": [], "bonus_claimed": False, "balance": 50, "last_claim_time": 0, 
+        "last_links": [], "bonus_claimed": False, "balance": 0, "last_claim_time": 0, 
         "legend_mx_active": False, "daily_code": f"MX-DAY-{user_id}-{random.randint(1000, 9999)}", "last_daily_time": 0,
         "claimed_secret_codes": set()
     })
@@ -243,12 +265,12 @@ async def profile_callback_handler(client, callback_query: CallbackQuery):
     ])
     
     await callback_query.message.edit_text(profile_text, reply_markup=profile_kb)
-    await callback_query.answer("🔄 پروفایلا تە هاتە نووکرن (Refreshed)!")
+    await callback_query.answer("🔄 پروفایلا تە بە خێرایی هاتە نووکرن (Refreshed)!")
 
 @app.on_callback_query(filters.regex(r"^my_downloads"))
 async def downloads_callback_handler(client, callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
-    stats = user_stats.get(user_id, {"downloads_count": 0, "balance": 50})
+    stats = user_stats.get(user_id, {"downloads_count": 0, "balance": 0})
     
     dl_text = (
         f"📥 **بەشێ ڤیدیۆیێن داونلۆدكری:**\n\n"
@@ -286,7 +308,8 @@ async def bot_help_handler(client, callback_query: CallbackQuery):
         "💡 **رێنمایێن بەکارهۆنانێ:**\n\n"
         "• 75 کۆدێن ڤەشارتى هەنە و هەر کۆدەک **600 Balance** ددەت!\n"
         "• هەر کۆدەک تنێ بۆ **2 کەسان** هاتیە دانان و هەر ID تنێ جارەکێ دکارە بکاربينت.\n"
-        "• کۆدێ ڕۆژانەیێ تایبەت یێ کاربەری **75 Key** ددەت.\n\n"
+        "• کۆدێ ڕۆژانەیێ تایبەت یێ کاربەری **75 Key** ددەت.\n"
+        "• نرخێ داونلۆدکرنێ بوویە **2 Key**.\n\n"
         "👑 خودان: @YUSEEF_SURCHI"
     )
     kb = InlineKeyboardMarkup([
@@ -309,10 +332,15 @@ async def system_status_handler(client, callback_query: CallbackQuery):
 @app.on_callback_query(filters.regex(r"^daily_bonus"))
 async def daily_bonus_handler(client, callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
-    current_time = time.time()
     
+    is_member = await check_user_channel_membership(client, user_id)
+    if not is_member:
+        await callback_query.answer("❌ بۆ وەرگرتنا خەلاتی، دڤێت پشکدار بی د چەنەلا مە دا: https://t.me/LEGEND_MODS33", show_alert=True)
+        return
+
+    current_time = time.time()
     stats = user_stats.setdefault(user_id, {
-        "balance": 50, "downloads_count": 0, "success_count": 0, "links_count": 0, 
+        "balance": 0, "downloads_count": 0, "success_count": 0, "links_count": 0, 
         "rank": "⭐ ئەندامێ نوو", "last_links": [], "legend_mx_active": False,
         "daily_code": f"MX-DAY-{user_id}-{random.randint(1000, 9999)}", "last_daily_time": 0,
         "claimed_secret_codes": set()
@@ -327,7 +355,7 @@ async def daily_bonus_handler(client, callback_query: CallbackQuery):
         return
         
     stats["last_daily_time"] = current_time
-    stats["balance"] += 75  # 75 Key بۆ خەلاتێ ڕۆژانە
+    stats["balance"] += 75
     
     bonus_text = (
         f"🎁 **پیرۆزە! خەلاتێ ڕۆژانە ب سەرکەفتن هاتە وەرگرتن:**\n\n"
@@ -347,7 +375,7 @@ async def daily_bonus_handler(client, callback_query: CallbackQuery):
 async def back_home_handler(client, callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
     user_name = callback_query.from_user.first_name or "User"
-    bal = user_stats.setdefault(user_id, {}).get("balance", 50)
+    bal = user_stats.setdefault(user_id, {}).get("balance", 0)
 
     welcome_text = (
         f"🌟 سڵاو ل تە هەڤاڵێ خۆشەویست {user_name}!\n\n"
@@ -366,6 +394,15 @@ async def downloader_core_handler(client, message: Message):
         await message.reply_text("❌ تو هاتیە بلۆککرن.")
         return
 
+    is_member = await check_user_channel_membership(client, user_id)
+    if not is_member:
+        join_kb = InlineKeyboardMarkup([
+            [InlineKeyboardButton("📢 پشکداربوون د چەنەلێ دا", url="https://t.me/LEGEND_MODS33")],
+            [InlineKeyboardButton("🔄 پشکنینا پشکداریێ (Check)", callback_data="check_membership")]
+        ])
+        await message.reply_text("⚠️ بۆ کارئینانا بۆتی، دڤێت پێش هەمی تشتن پشکدار بی د چەنەلا مە دا: https://t.me/LEGEND_MODS33", reply_markup=join_kb)
+        return
+
     user_name = message.from_user.first_name or "User"
     user_username = f"@{message.from_user.username}" if message.from_user.username else "نەدیار"
     text_input = message.text.strip()
@@ -374,13 +411,11 @@ async def downloader_core_handler(client, message: Message):
         user_stats[user_id] = {
             "name": user_name, "username": user_username, "links_count": 0, 
             "downloads_count": 0, "success_count": 0, "rank": "⭐ ئەندامێ نوو", 
-            "last_links": [], "bonus_claimed": False, "balance": 50, "last_claim_time": 0, 
-            "last_channel_claim": 0, "legend_mx_active": False, 
-            "daily_code": f"MX-DAY-{user_id}-{random.randint(1000, 9999)}", "last_daily_time": 0,
+            "last_links": [], "bonus_claimed": False, "balance": 0, "last_claim_time": 0, 
+            "legend_mx_active": False, "daily_code": f"MX-DAY-{user_id}-{random.randint(1000, 9999)}", "last_daily_time": 0,
             "claimed_secret_codes": set()
         }
 
-    # پشکنینا 75 کۆدێن ڤەشارتى (Secret Codes) کو هەر ئێک 600 Balance ددەت و تنێ 2 کەس دکارن بکاربینن
     if text_input in LEGEND_75_SECRET_CODES:
         if text_input in user_stats[user_id]["claimed_secret_codes"] or user_id in secret_code_usage_count[text_input]:
             await message.reply_text("❌ لێبوورین! تو ڤی کۆدی پێشتر تە وەرگرتیە و هر ID-یەک تنێ جارەکێ دکارە بکاربينت.\n\n👑 خودان: @YUSEEF_SURCHI")
@@ -406,7 +441,6 @@ async def downloader_core_handler(client, message: Message):
         )
         return
 
-    # پشکنینا کۆدێ تایبەت یێ کاربەری (75 Key)
     if text_input == user_stats[user_id]["daily_code"]:
         current_time = time.time()
         cooldown_day = 86400
@@ -461,8 +495,8 @@ async def downloader_core_handler(client, message: Message):
         bal = user_stats[user_id]["balance"]
         action_kb = InlineKeyboardMarkup([
             [
-                InlineKeyboardButton("📥 داونلۆد MP4 (نرخ: 1 Key)", callback_data=f"dl_mp4|{url_link}"),
-                InlineKeyboardButton("🎵 داونلۆد MP3 (نرخ: 1 Key)", callback_data=f"dl_mp3_full|{url_link}")
+                InlineKeyboardButton("📥 داونلۆد MP4 (نرخ: 2 Key)", callback_data=f"dl_mp4|{url_link}"),
+                InlineKeyboardButton("🎵 داونلۆد MP3 (نرخ: 2 Key)", callback_data=f"dl_mp3_full|{url_link}")
             ],
             [
                 InlineKeyboardButton("🔙 ڤەگەر بۆ سەرەکی", callback_data="back_home")
@@ -489,17 +523,23 @@ async def downloader_core_handler(client, message: Message):
 async def download_callback_handler(client, callback_query: CallbackQuery):
     global global_total_downloads
     user_id = callback_query.from_user.id
+    
+    is_member = await check_user_channel_membership(client, user_id)
+    if not is_member:
+        await callback_query.answer("❌ بۆ داونلۆدکرنێ، دڤێت پشکدار بی د چەنەلا مە دا: https://t.me/LEGEND_MODS33", show_alert=True)
+        return
+
     data = callback_query.data
     action, url_link = data.split("|", 1)
     
-    stats = user_stats.setdefault(user_id, {"balance": 50, "downloads_count": 0, "success_count": 0})
+    stats = user_stats.setdefault(user_id, {"balance": 0, "downloads_count": 0, "success_count": 0})
     
-    if stats["balance"] < 1:
-        await callback_query.answer("❌ Balance-ێ تە نەهنگە! پێدڤییە حداقل 1 Key هەبت.", show_alert=True)
+    if stats["balance"] < 2:
+        await callback_query.answer("❌ Balance-ێ تە نەهنگە! پێدڤییە حداقل 2 Key هەبت.", show_alert=True)
         return
 
-    stats["balance"] -= 1
-    await callback_query.answer("📥 داونلۆدکرن دەست پێکر (1 Key هاتە کێمکرن)...", show_alert=False)
+    stats["balance"] -= 2  # کێمکرنا 2 Key بۆ داونلۆدکرنێ
+    await callback_query.answer("📥 داونلۆدکرن دەست پێکر (2 Key هاتە کێمکرن)...", show_alert=False)
     status_msg = await callback_query.message.reply_text(f"⏳ خەریکە فایلێ دابەزینم... (Balance: {stats['balance']} Key)\n\n👑 خودان: @YUSEEF_SURCHI")
 
     filename = None
@@ -551,7 +591,7 @@ async def download_callback_handler(client, callback_query: CallbackQuery):
             os.remove(filename)
         await status_msg.delete()
     except Exception as e:
-        stats["balance"] += 1
+        stats["balance"] += 2  # ڤەگەراندنا Key ئەگەر هەڵە هەبت
         if filename and os.path.exists(filename):
             try:
                 os.remove(filename)
@@ -559,5 +599,5 @@ async def download_callback_handler(client, callback_query: CallbackQuery):
                 pass
         await status_msg.edit_text(f"❌ هەڵەیەک ڕوویدا، Key هاتە ڤەگەراندن:\n`{str(e)}`\n\n👑 خودان: @YUSEEF_SURCHI")
 
-print("🚀 Ultimate Supreme Trillion Menu Bot (V24 - 75 Hidden Codes with 600 Balance, 2-User Limit, 75 Key Daily) with Owner @YUSEEF_SURCHI is Running!")
+print("🚀 Ultimate Supreme Trillion Menu Bot (V25 - 0 Start, 2 Key Download, Channel Join Guard, 3h Reward) with Owner @YUSEEF_SURCHI is Running!")
 app.run()
