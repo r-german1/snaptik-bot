@@ -10,7 +10,7 @@ API_ID = int(os.environ.get("API_ID", "34584240"))
 API_HASH = os.environ.get("API_HASH", "eba4f8333cba5f9697a1d20779d4d6e9")
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8918686553:AAH405vftzUcQPQ215ZhmknM4ll0vbn1xtU")
 REQUIRED_CHANNEL = "LEGEND_MODS33"
-OWNER_USERNAME = "@LEGEND_MODS33"  # ناڤێ خودانی بۆ وەرگرتنا Free Key
+OWNER_USERNAME = "@YUSEEF_SURCHI"
 
 app = Client(
     "mx_download_omega_supreme_god_2026",
@@ -38,7 +38,6 @@ for i in range(1, 201):
     c_str = f"MX-ULTRA-10M-{i:03d}-{random.randint(100000, 999999)}"
     MX_200_CODES[c_str] = 10000000
 
-# Combine all secret codes into a single dictionary
 ALL_SECRET_CODES = {**MX_80_CODES, **MX_200_CODES}
 for code in ALL_SECRET_CODES:
     secret_code_usage_count[code] = set()
@@ -113,6 +112,7 @@ async def start_command_handler(client, message: Message):
         "📢 سەرەدانا چەنەلا مە بکە بۆ وەرگرتنا کۆدێن ڤەشارتی یێن 1K و 10M:\n"
         "🔗 https://t.me/LEGEND_MODS33\n\n"
         f"💰 Balance-ێ تە یێ نها: `{current_bal}` Key\n"
+        f"👑 خودانێ بۆتی: {OWNER_USERNAME}\n"
         f"⏰ وقت بغداد: `{get_baghdad_time()}`\n\n"
         "🔗 لینکا خۆ (TikTok/Instagram/YouTube بێ واتەمارک) ل ڤێرە بنێرە!"
     )
@@ -137,7 +137,7 @@ async def mx_video_download_menu_handler(client, callback_query: CallbackQuery):
         "📥 **MX DOWNLOAD Omega Lab (No Watermark - 720FPS):**\n\n"
         f"💰 Balance-ێ تە: `{bal}` Key\n"
         "✨ پشتەڤانیا تەواوا YouTube, TikTok (No Watermark), Instagram (No Watermark).\n"
-        "🚀 نرخێ هەر داونلۆدەکێ: 1 Key\n\n"
+        f"💎 بۆ Free Key سەرەدانا خودانی بکە: {OWNER_USERNAME}\n\n"
         "🔗 لینکا خۆ ل ڤێرە بنێرە بۆ داونلۆدکرنێ!"
     )
     await callback_query.message.edit_text(menu_text, reply_markup=get_back_keyboard())
@@ -149,7 +149,6 @@ async def legend_mx_claim_handler(client, callback_query: CallbackQuery):
     current_t = time.time()
     stats = user_stats.setdefault(user_id, {"balance": 0, "last_claim_time": 0, "downloads_count": 0, "downloaded_videos": []})
     
-    # 4 hours = 14400 seconds
     if current_t - stats["last_claim_time"] < 14400:
         remaining = int(14400 - (current_t - stats["last_claim_time"]))
         hours = remaining // 3600
@@ -183,6 +182,7 @@ async def profile_callback_handler(client, callback_query: CallbackQuery):
         f"📌 Profile ID: `{stats['profile_id']}`\n"
         f"📱 جۆرێ مۆبایلی / سیستەم: `{stats['mobile_type']}`\n"
         f"⭐ پلە (Level): `{stats['level']}` (XP: {stats['xp']})\n"
+        f"👑 خودان: {OWNER_USERNAME}\n"
         f"⏱ دەمژمێرا بغداد: `{get_baghdad_time()}`\n"
         f"• 💰 Balance: `{stats['balance']}` Key\n"
         f"• 📥 گشتی داونلۆد: `{stats['downloads_count']}`\n"
@@ -233,7 +233,7 @@ async def global_stats_handler(client, callback_query: CallbackQuery):
         f"📊 **ئامارێن گشتی یێن MX Omega:**\n"
         f"👥 کۆما کاربەران: `{len(user_stats)}`\n"
         f"📥 گشتی داونلۆدێن بۆتی: `{global_total_downloads}`\n"
-        f"🌐 سەروەر: `Omega Supreme God 100M+ Engine (720 FPS)`\n"
+        f"👑 خودانێ بۆتی: {OWNER_USERNAME}\n"
         f"⏰ وقت بغداد: `{get_baghdad_time()}`",
         reply_markup=get_back_keyboard()
     )
@@ -242,12 +242,12 @@ async def global_stats_handler(client, callback_query: CallbackQuery):
 @app.on_callback_query(filters.regex(r"^bot_help$"))
 async def bot_help_handler(client, callback_query: CallbackQuery):
     help_text = (
-        "💡 **رێنمایێن بەکارهۆنانێ (MX Omega Supreme God):**\n"
-        "• 80 کۆدێن فەشارتی (هەر ئێشک 1,000 Key تنێ بۆ 1 کەس).\n"
-        "• 200 کۆدێن زەبەلاح (هەر ئێشک 10M Key تنێ بۆ 1 کەس).\n"
-        "• خەلاتێ 4 دەمژمێری 10 Key ددەت.\n"
-        "• نرخێ هەر دابەزاندنەکێ 1 Key یە.\n"
-        f"• بۆ وەرگرتنا Free Key سەرەدانا خودانی بکە: {OWNER_USERNAME}\n"
+        f"💡 **رێنمایێن بەکارهۆنانێ (MX Omega Supreme God):**\n"
+        f"• 80 کۆدێن فەشارتی (1,000 Key تنێ بۆ 1 کەس).\n"
+        f"• 200 کۆدێن زەبەلاح (10M Key تنێ بۆ 1 کەس).\n"
+        f"• خەلاتێ 4 دەمژمێری: 10 Key.\n"
+        f"• نرخێ هەر داونلۆدەکێ: 1 Key.\n"
+        f"💎 بۆ وەرگرتنا Free Key سەرەدانا خودانی بکە: {OWNER_USERNAME}\n"
         f"⏰ وقت بغداد: `{get_baghdad_time()}`"
     )
     await callback_query.message.edit_text(help_text, reply_markup=get_back_keyboard())
@@ -256,9 +256,9 @@ async def bot_help_handler(client, callback_query: CallbackQuery):
 @app.on_callback_query(filters.regex(r"^system_status$"))
 async def system_status_handler(client, callback_query: CallbackQuery):
     await callback_query.message.edit_text(
-        "⚙️ **ڕاپۆرت و پشکنینا سیستەمی (Omega 100M+):**\n"
-        "• سەروەرێ Omega Supreme: `Active (9999999K)`\n"
-        "• فریم ڕەیت و کوالیتى: `720 FPS Hyper Quantum Smooth`\n"
+        f"⚙️ **ڕاپۆرت و پشکنینا سیستەمی (Omega 100M+):**\n"
+        f"• سەروەرێ Omega Supreme: `Active`\n"
+        f"👑 خودانێ بۆتی: {OWNER_USERNAME}\n"
         f"⏰ وقت بغداد: `{get_baghdad_time()}`",
         reply_markup=get_back_keyboard()
     )
@@ -269,7 +269,7 @@ async def back_home_handler(client, callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
     bal = user_stats.setdefault(user_id, {}).get("balance", 0)
     await callback_query.message.edit_text(
-        f"🌟 بخێرهاتن ڤە بۆ MX DOWNLOAD Omega!\n💰 Balance-ێ تە: `{bal}` Key\n⏰ وقت بغداد: `{get_baghdad_time()}`",
+        f"🌟 بخێرهاتن ڤە بۆ MX DOWNLOAD Omega!\n💰 Balance-ێ تە: `{bal}` Key\n👑 خودان: {OWNER_USERNAME}\n⏰ وقت بغداد: `{get_baghdad_time()}`",
         reply_markup=get_main_menu_keyboard()
     )
     await callback_query.answer()
@@ -309,14 +309,13 @@ async def downloader_core_handler(client, message: Message):
         stats["xp"] += 5000
         
         await message.reply_text(
-            f"🎉 **پیرۆزە! +{reward_val:,} Balance (کۆدێ ڤەشارتی یێ Omega) هاتە زێدەکرن!**\n"
+            f"🎉 **پیرۆزە! +{reward_val:,} Balance (کۆدێ ڤەشارتی) هاتە زێدەکرن!**\n"
             f"💰 Balance-ێ نوو: `{stats['balance']:,}` Key\n"
             f"⏰ وقت بغداد: `{get_baghdad_time()}`"
         )
         return
 
     if not text_input.startswith("http"):
-        # Check if user has zero balance or low balance to suggest contacting owner
         free_key_text = ""
         if stats["balance"] < 1:
             free_key_text = f"\n\n💎 Balance-ێ تە نەما! بۆ وەرگرتنا Free Key سەرەدانا خودانی بکە: {OWNER_USERNAME}"
@@ -424,7 +423,7 @@ async def download_callback_handler(client, callback_query: CallbackQuery):
             os.remove(filename)
         await status_msg.delete()
     except Exception as e:
-        stats["balance"] += 1  # Refund 1 Key automatically on any error
+        stats["balance"] += 1
         if filename and os.path.exists(filename):
             try:
                 os.remove(filename)
