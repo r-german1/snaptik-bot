@@ -2,16 +2,15 @@ import os
 import asyncio
 import time
 import random
+import string
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, CallbackQuery
-from pyrogram.errors import UserNotParticipant
 from yt_dlp import YoutubeDL
 
 API_ID = int(os.environ.get("API_ID", "34584240"))
 API_HASH = os.environ.get("API_HASH", "eba4f8333cba5f9697a1d20779d4d6e9")
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8918686553:AAH405vftzUcQPQ215ZhmknM4ll0vbn1xtU")
 REQUIRED_CHANNEL = "LEGEND_MODS33"
-CHANNEL_URL = "https://t.me/LEGEND_MODS33"
 OWNERS = ["@YUSEEF_SURCHI", "@Arthur3345"]
 
 app = Client(
@@ -28,10 +27,13 @@ global_total_downloads = 0
 banned_users = set()
 secret_code_usage_count = {}
 
-# 200 Distinct Secret Codes, each giving 100M Balance, usable by up to 10 users max
+# 200 Distinct Codes: Starting with MX-LEGEND-, exactly 25 chars long, 100M balance, max 20 users each
 MX_200_100M_CODES = {}
-for i in range(1, 201):
-    c_str = f"MX-OMEGA-100M-{i:03d}-{random.randint(100000, 999999)}"
+chars = string.ascii_uppercase + string.digits
+
+for _ in range(200):
+    rand_part = ''.join(random.choices(chars, k=15))
+    c_str = f"MX-LEGEND-{rand_part}"
     MX_200_100M_CODES[c_str] = 100000000
 
 for code in MX_200_100M_CODES:
@@ -40,17 +42,6 @@ for code in MX_200_100M_CODES:
 def get_baghdad_time():
     t_sec = time.time() + 10800  # UTC+3 Baghdad Time
     return time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(t_sec))
-
-async def check_user_subscription(client, user_id):
-    try:
-        member = await client.get_chat_member(REQUIRED_CHANNEL, user_id)
-        if member.status in ["member", "administrator", "creator"]:
-            return True
-    except UserNotParticipant:
-        return False
-    except Exception:
-        return False
-    return False
 
 def get_main_menu_keyboard():
     return InlineKeyboardMarkup([
@@ -68,7 +59,7 @@ def get_main_menu_keyboard():
         ],
         [
             InlineKeyboardButton("🏆 Top 100 Omega Ranking", callback_data="top_100_ranking"),
-            InlineKeyboardButton("📢 چەنەلا مە (LEGEND_MODS33)", url=CHANNEL_URL)
+            InlineKeyboardButton("📢 چەنەلا مە (LEGEND_MODS33)", url="https://t.me/LEGEND_MODS33")
         ],
         [
             InlineKeyboardButton("📊 ئامارێن گشتی یێن بۆتی", callback_data="bot_global_stats"),
@@ -85,25 +76,11 @@ def get_back_keyboard():
         [InlineKeyboardButton("🔄 Refresh", callback_data="refresh_home"), InlineKeyboardButton("🔙 ڤەگەر بۆ سەرەکی", callback_data="back_home")]
     ])
 
-@app.on_message(filters.command("start") & filters.private)
+@app.on_message(filters.command("start"))
 async def start_command_handler(client, message: Message):
     user_id = message.from_user.id
     if user_id in banned_users:
         await message.reply_text("❌ لێبوورین، تو هاتیە بلۆککرن.")
-        return
-
-    is_joined = await check_user_subscription(client, user_id)
-    if not is_joined:
-        join_markup = InlineKeyboardMarkup([
-            [InlineKeyboardButton("🛑 جۆین بە لێرە کلیک بکە", url=CHANNEL_URL)],
-            [InlineKeyboardButton("🔄 پشکنینا جۆینکرنێ (Refresh)", callback_data="refresh_home")]
-        ])
-        await message.reply_text(
-            f"❗ ببورە هەڤاڵێ خۆشەویست، بۆ بەکارهێنانی بۆتەکە دەبێت سەرەتا ببیتە ئەندام لە کەناڵەکەمان:\n\n"
-            f"📢 کەناڵ: @{REQUIRED_CHANNEL}\n\n"
-            f"دوای جۆین کردن دووبارە لای خوارێ کلیک بکە یان `/start` بنووسەوە.",
-            reply_markup=join_markup
-        )
         return
 
     user_name = message.from_user.first_name or "User"
@@ -130,24 +107,19 @@ async def start_command_handler(client, message: Message):
     welcome_text = (
         f"🌟 سڵاو ل تە هەڤاڵێ خۆشەویست {user_name}!\n\n"
         "🔥🔥 بخێرهاتن بۆ **MX DOWNLOAD** (OMEGA SUPREME GOD 100M+ Engine)!\n"
-        f"📢 سەرەدانا چەنەلا مە بکە بۆ وەرگرتنا 200 کۆدێن زەبەلاح (هەر کۆدەک 100M Balance و تنێ 10 کەس دشێن بکار بینن):\n"
-        f"🔗 {CHANNEL_URL}\n\n"
+        "📢 سەرەدانا چەنەلا مە بکە بۆ وەرگرتنا کۆدێن زەبەلاح (هەر کۆدەک 100M Balance و تنێ 20 کەس دشێن بکار بینن):\n"
+        "🔗 https://t.me/LEGEND_MODS33\n\n"
         f"💰 Balance-ێ تە یێ نها: `{current_bal:,}` Key\n"
         f"👑 خودانێن بۆتی: {OWNERS[0]} & {OWNERS[1]}\n"
         f"⏰ وقت بغداد: `{get_baghdad_time()}`\n\n"
-        "🔗 لینکا خۆ (TikTok/Instagram/YouTube بێ واتەمارک) ل ڤێرە بنێرە!"
+        "🔗 لینکا خۆ (TikTok/Instagram/YouTube بێ واتەمارک) یان کۆدێ خۆ ل ڤێرە بنێرە!"
     )
     await message.reply_text(welcome_text, reply_markup=get_main_menu_keyboard())
 
 @app.on_callback_query(filters.regex(r"^refresh_home$"))
 async def refresh_home_handler(client, callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
-    is_joined = await check_user_subscription(client, user_id)
-    if not is_joined:
-        await callback_query.answer("❌ تو هێشتا جۆین نەبووی د کەناڵێ دا!", show_alert=True)
-        return
-
-    bal = user_stats.setdefault(user_id, {}).get("balance", 100)
+    bal = user_stats.setdefault(user_id, {}).get("balance", 0)
     await callback_query.message.edit_text(
         f"🔄 **MX DOWNLOAD Omega ب سەرکەفتن هاتە نووکرن!**\n\n💰 Balance-ێ تە: `{bal:,}` Key\n👑 خودان: {OWNERS[0]} & {OWNERS[1]}\n⏰ وقت بغداد: `{get_baghdad_time()}`",
         reply_markup=get_main_menu_keyboard()
@@ -157,10 +129,7 @@ async def refresh_home_handler(client, callback_query: CallbackQuery):
 @app.on_callback_query(filters.regex(r"^mx_video_download_menu$"))
 async def mx_video_download_menu_handler(client, callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
-    if not await check_user_subscription(client, user_id):
-        await callback_query.answer("❌ سەرەتا بایدە جۆینێ د کەناڵێ دا بکەی!", show_alert=True)
-        return
-    user_stats.setdefault(user_id, {"balance": 100})
+    user_stats.setdefault(user_id, {"balance": 0})
     bal = user_stats[user_id]["balance"]
     menu_text = (
         "📥 **MX DOWNLOAD Omega Lab (No Watermark - 720FPS):**\n\n"
@@ -175,11 +144,8 @@ async def mx_video_download_menu_handler(client, callback_query: CallbackQuery):
 @app.on_callback_query(filters.regex(r"^legend_mx_claim$"))
 async def legend_mx_claim_handler(client, callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
-    if not await check_user_subscription(client, user_id):
-        await callback_query.answer("❌ سەرەتا بایدە جۆینێ د کەناڵێ دا بکەی!", show_alert=True)
-        return
     current_t = time.time()
-    stats = user_stats.setdefault(user_id, {"balance": 100, "last_claim_time": 0, "downloads_count": 0, "downloaded_videos": []})
+    stats = user_stats.setdefault(user_id, {"balance": 0, "last_claim_time": 0, "downloads_count": 0, "downloaded_videos": []})
     
     if current_t - stats["last_claim_time"] < 14400:
         remaining = int(14400 - (current_t - stats["last_claim_time"]))
@@ -200,11 +166,8 @@ async def legend_mx_claim_handler(client, callback_query: CallbackQuery):
 @app.on_callback_query(filters.regex(r"^my_profile$"))
 async def profile_callback_handler(client, callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
-    if not await check_user_subscription(client, user_id):
-        await callback_query.answer("❌ سەرەتا بایدە جۆینێ د کەناڵێ دا بکەی!", show_alert=True)
-        return
     stats = user_stats.setdefault(user_id, {
-        "balance": 100, "links_count": 0, "downloads_count": 0, "downloaded_videos": [],
+        "balance": 0, "links_count": 0, "downloads_count": 0, "downloaded_videos": [],
         "profile_id": f"MX-PID-OMEGA-{random.randint(100000, 999999)}", "mobile_type": "Omega Android/iOS Device (720FPS)",
         "level": "Omega Novice", "xp": 0, "ref_count": 0
     })
@@ -228,10 +191,7 @@ async def profile_callback_handler(client, callback_query: CallbackQuery):
 @app.on_callback_query(filters.regex(r"^my_downloads$"))
 async def downloads_callback_handler(client, callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
-    if not await check_user_subscription(client, user_id):
-        await callback_query.answer("❌ سەرەتا بایدە جۆینێ د کەناڵێ دا بکەی!", show_alert=True)
-        return
-    stats = user_stats.get(user_id, {"downloads_count": 0, "downloaded_videos": [], "balance": 100})
+    stats = user_stats.get(user_id, {"downloads_count": 0, "downloaded_videos": [], "balance": 0})
     vids = stats.get("downloaded_videos", [])
     
     vids_text = "\n".join([f"• {v}" for v in vids[-10:]]) if vids else "هیچ ڤیدیۆیەک نەهاتیە داونلۆدکرن."
@@ -249,10 +209,6 @@ async def downloads_callback_handler(client, callback_query: CallbackQuery):
 
 @app.on_callback_query(filters.regex(r"^top_100_ranking$"))
 async def top_100_ranking_handler(client, callback_query: CallbackQuery):
-    user_id = callback_query.from_user.id
-    if not await check_user_subscription(client, user_id):
-        await callback_query.answer("❌ سەرەتا بایدە جۆینێ د کەناڵێ دا بکەی!", show_alert=True)
-        return
     sorted_users = sorted(user_stats.items(), key=lambda x: x[1].get("downloads_count", 0), reverse=True)[:100]
     
     top_text = f"🏆 **ڕێزبەندا Top 100 (Omega Supreme):**\n👑 خودان: {OWNERS[0]} & {OWNERS[1]}\n\n"
@@ -286,7 +242,7 @@ async def global_stats_handler(client, callback_query: CallbackQuery):
 async def bot_help_handler(client, callback_query: CallbackQuery):
     help_text = (
         f"💡 **رێنمایێن بەکارهۆنانێ (MX Omega Supreme God):**\n"
-        f"• 200 کۆدێن زەبەلاح (هەر کۆدەک 100M Key و تنێ 10 کەس دشێن بکار بینن).\n"
+        f"• 200 کۆدێن زەبەلاح (هەر کۆدەک 100M Key و تنێ 20 کەس دشێن بکار بینن).\n"
         f"• خەلاتێ 4 دەمژمێری: 10 Key.\n"
         f"• نرخێ هەر داونلۆدەکێ: 1 Key.\n"
         f"👑 خودانێن بۆتی: {OWNERS[0]} & {OWNERS[1]}\n"
@@ -309,10 +265,7 @@ async def system_status_handler(client, callback_query: CallbackQuery):
 @app.on_callback_query(filters.regex(r"^back_home$"))
 async def back_home_handler(client, callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
-    if not await check_user_subscription(client, user_id):
-        await callback_query.answer("❌ سەرەتا بایدە جۆینێ د کەناڵێ دا بکەی!", show_alert=True)
-        return
-    bal = user_stats.setdefault(user_id, {}).get("balance", 100)
+    bal = user_stats.setdefault(user_id, {}).get("balance", 0)
     await callback_query.message.edit_text(
         f"🌟 بخێرهاتن ڤە بۆ MX DOWNLOAD Omega!\n💰 Balance-ێ تە: `{bal:,}` Key\n👑 خودان: {OWNERS[0]} & {OWNERS[1]}\n⏰ وقت بغداد: `{get_baghdad_time()}`",
         reply_markup=get_main_menu_keyboard()
@@ -323,20 +276,6 @@ async def back_home_handler(client, callback_query: CallbackQuery):
 async def downloader_core_handler(client, message: Message):
     user_id = message.from_user.id
     if user_id in banned_users:
-        return
-
-    is_joined = await check_user_subscription(client, user_id)
-    if not is_joined:
-        join_markup = InlineKeyboardMarkup([
-            [InlineKeyboardButton("🛑 جۆین بە لێرە کلیک بکە", url=CHANNEL_URL)],
-            [InlineKeyboardButton("🔄 پشکنینا جۆینکرنێ (Refresh)", callback_data="refresh_home")]
-        ])
-        await message.reply_text(
-            f"❗ ببورە، بۆ بەکارهێنانی بۆتەکە دەبێت سەرەتا ببیتە ئەندام لە کەناڵەکەمان:\n\n"
-            f"📢 کەناڵ: @{REQUIRED_CHANNEL}\n\n"
-            f"دوای جۆین کردن دووبارە `/start` بنووسەوە.",
-            reply_markup=join_markup
-        )
         return
 
     text_input = message.text.strip()
@@ -353,9 +292,9 @@ async def downloader_core_handler(client, message: Message):
         if text_input in stats["claimed_secret_codes"] or user_id in secret_code_usage_count[text_input]:
             await message.reply_text(f"❌ تو ڤی کۆدی پێشتر وەرگرتیە!\n⏰ وقت بغداد: `{get_baghdad_time()}`")
             return
-        if len(secret_code_usage_count[text_input]) >= 10:
+        if len(secret_code_usage_count[text_input]) >= 20:
             await message.reply_text(
-                f"❌ سنوورێ ڤی کۆدی تەواو بوو (تنێ 10 کەسان بکار ئینایە).\n"
+                f"❌ سنوورێ ڤی کۆدی تەواو بوو (تنێ 20 کەسان بکار ئینایە).\n"
                 f"👑 خودانێن بۆتی: {OWNERS[0]} & {OWNERS[1]}\n"
                 f"⏰ وقت بغداد: `{get_baghdad_time()}`"
             )
@@ -422,12 +361,8 @@ async def downloader_core_handler(client, message: Message):
 async def download_callback_handler(client, callback_query: CallbackQuery):
     global global_total_downloads
     user_id = callback_query.from_user.id
-    if not await check_user_subscription(client, user_id):
-        await callback_query.answer("❌ سەرەتا بایدە جۆینێ د کەناڵێ دا بکەی!", show_alert=True)
-        return
-
     action, url_link = callback_query.data.split("|", 1)
-    stats = user_stats.setdefault(user_id, {"balance": 100, "downloads_count": 0, "downloaded_videos": [], "xp": 0})
+    stats = user_stats.setdefault(user_id, {"balance": 0, "downloads_count": 0, "downloaded_videos": [], "xp": 0})
     
     if stats["balance"] < 1:
         await callback_query.answer(f"❌ Balance-ێ تە نینە! (1 Key پێدڤییە). بۆ Free Key سەرەدانا {OWNERS[0]} یان {OWNERS[1]} بکە.", show_alert=True)
