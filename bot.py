@@ -12,9 +12,10 @@ API_HASH = os.environ.get("API_HASH", "eba4f8333cba5f9697a1d20779d4d6e9")
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8918686553:AAH405vftzUcQPQ215ZhmknM4ll0vbn1xtU")
 REQUIRED_CHANNEL = "LEGEND_MODS33"
 OWNERS = ["@YUSEEF_SURCHI", "@Arthur3345"]
+ADMIN_ID = 7643191802
 
 app = Client(
-    "mx_download_omega_supreme_god_2026",
+    "mx_download_omega_supreme_god_2026_v2",
     api_id=API_ID,
     api_hash=API_HASH,
     bot_token=BOT_TOKEN,
@@ -27,11 +28,11 @@ global_total_downloads = 0
 banned_users = set()
 secret_code_usage_count = {}
 
-# 200 Distinct Active Codes: Starting with MX-LEGEND-, exactly 25 chars long, 100M balance each, max 20 users per code
-MX_200_100M_CODES = {}
-chars = string.ascii_uppercase + string.digits
+# Admin temporary state memory for modifying balance or managing users
+admin_temp_state = {}
 
-# Explicit predefined active codes list to match the 200 codes generated previously
+# 200 Distinct Active Codes: Starting with MX-LEGEND-, exactly 25 chars long, 500M balance each, max 20 users per code
+MX_200_500M_CODES = {}
 predefined_codes = [
     "MX-LEGEND-A1B2C3D4E5F6G7H", "MX-LEGEND-Z9Y8X7W6V5U4T3S", "MX-LEGEND-M1N2B3V4C5X6Z7A", "MX-LEGEND-P9O8I7U6Y5T4R3E",
     "MX-LEGEND-K5J4H3G2F1D9S8A", "MX-LEGEND-Q2W3E4R5T6Y7U8I", "MX-LEGEND-L8K7J6H5G4F3D2S", "MX-LEGEND-1Z2X3C4V5B6N7M8",
@@ -83,17 +84,17 @@ predefined_codes = [
 ]
 
 for c_str in predefined_codes:
-    MX_200_100M_CODES[c_str] = 100000000
+    MX_200_500M_CODES[c_str] = 500000000
 
-for code in MX_200_100M_CODES:
+for code in MX_200_500M_CODES:
     secret_code_usage_count[code] = set()
 
 def get_baghdad_time():
     t_sec = time.time() + 10800  # UTC+3 Baghdad Time
     return time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(t_sec))
 
-def get_main_menu_keyboard():
-    return InlineKeyboardMarkup([
+def get_main_menu_keyboard(user_id):
+    keyboard = [
         [
             InlineKeyboardButton("👤 پروفایلا من (Omega Specs)", callback_data="my_profile"),
             InlineKeyboardButton("📥 ڤیدیۆیێن داونلۆدکری", callback_data="my_downloads")
@@ -118,9 +119,12 @@ def get_main_menu_keyboard():
             InlineKeyboardButton("⚙️ سیستەم و پشکنین (720 FPS)", callback_data="system_status"),
             InlineKeyboardButton("🔄 نووکرنا سەرەکی (Refresh)", callback_data="refresh_home")
         ]
-    ])
+    ]
+    if user_id == ADMIN_ID:
+        keyboard.insert(0, [InlineKeyboardButton("🔎 گەران (Admin Search & Control Panel)", callback_data="admin_search_panel")])
+    return InlineKeyboardMarkup(keyboard)
 
-def get_back_keyboard():
+def get_back_keyboard(user_id):
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("🔄 Refresh", callback_data="refresh_home"), InlineKeyboardButton("🔙 ڤەگەر بۆ سەرەکی", callback_data="back_home")]
     ])
@@ -143,35 +147,36 @@ async def start_command_handler(client, message: Message):
             
         user_stats[user_id] = {
             "name": user_name, "username": user_username, "links_count": 0,
-            "downloads_count": 0, "downloaded_videos": [], "balance": 100,
+            "downloads_count": 0, "downloaded_videos": [], "balance": 0,
             "last_claim_time": 0, 
             "profile_id": f"MX-PID-OMEGA-{random.randint(100000, 999999)}",
             "mobile_type": mobile_hint,
             "claimed_secret_codes": set(), "ref_link": referral_link,
             "ref_count": 0, "level": "Omega Novice", "xp": 0
         }
+    else:
+        user_stats[user_id]["name"] = user_name
+        user_stats[user_id]["username"] = user_username
 
     current_bal = user_stats[user_id]['balance']
     
     welcome_text = (
         f"🌟 سڵاو ل تە هەڤاڵێ خۆشەویست {user_name}!\n\n"
-        "🔥🔥 بخێرهاتن بۆ **MX DOWNLOAD** (OMEGA SUPREME GOD 100M+ Engine)!\n"
-        "📢 سەرەدانا چەنەلا مە بکە بۆ وەرگرتنا کۆدێن زەبەلاح (هەر کۆدەک 100M Balance و تنێ 20 کەس دشێن بکار بینن):\n"
-        "🔗 https://t.me/LEGEND_MODS33\n\n"
+        "🔥🔥 بخێرهاتن بۆ **MX DOWNLOAD** (OMEGA SUPREME GOD 500M+ Engine)!\n"
+        "📢 سەرەدانا چەنەلا مە بکە بۆ وەرگرتنا کۆدێن زەبەلاح (هەر کۆدەک 500M Balance و تنێ 20 کەس دشێن بکار بینن):\n\n"
         f"💰 Balance-ێ تە یێ نها: `{current_bal:,}` Key\n"
-        f"👑 خودانێن بۆتی: {OWNERS[0]} & {OWNERS[1]}\n"
         f"⏰ وقت بغداد: `{get_baghdad_time()}`\n\n"
         "🔗 لینکا خۆ (TikTok/Instagram/YouTube بێ واتەمارک) یان کۆدێ خۆ ل ڤێرە بنێرە!"
     )
-    await message.reply_text(welcome_text, reply_markup=get_main_menu_keyboard())
+    await message.reply_text(welcome_text, reply_markup=get_main_menu_keyboard(user_id))
 
 @app.on_callback_query(filters.regex(r"^refresh_home$"))
 async def refresh_home_handler(client, callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
     bal = user_stats.setdefault(user_id, {}).get("balance", 0)
     await callback_query.message.edit_text(
-        f"🔄 **MX DOWNLOAD Omega ب سەرکەفتن هاتە نووکرن!**\n\n💰 Balance-ێ تە: `{bal:,}` Key\n👑 خودان: {OWNERS[0]} & {OWNERS[1]}\n⏰ وقت بغداد: `{get_baghdad_time()}`",
-        reply_markup=get_main_menu_keyboard()
+        f"🔄 **MX DOWNLOAD Omega ب سەرکەفتن هاتە نووکرن!**\n\n💰 Balance-ێ تە: `{bal:,}` Key\n⏰ وقت بغداد: `{get_baghdad_time()}`",
+        reply_markup=get_main_menu_keyboard(user_id)
     )
     await callback_query.answer("🔄 نوو بوو!")
 
@@ -183,11 +188,10 @@ async def mx_video_download_menu_handler(client, callback_query: CallbackQuery):
     menu_text = (
         "📥 **MX DOWNLOAD Omega Lab (No Watermark - 720FPS):**\n\n"
         f"💰 Balance-ێ تە: `{bal:,}` Key\n"
-        "✨ پشتەڤانیا تەواوا YouTube, TikTok (No Watermark), Instagram (No Watermark).\n"
-        f"👑 خودانێن بۆتی: {OWNERS[0]} & {OWNERS[1]}\n\n"
+        "✨ پشتەڤانیا تەواوا YouTube, TikTok (No Watermark), Instagram (No Watermark).\n\n"
         "🔗 لینکا خۆ ل ڤێرە بنێرە بۆ داونلۆدکرنێ!"
     )
-    await callback_query.message.edit_text(menu_text, reply_markup=get_back_keyboard())
+    await callback_query.message.edit_text(menu_text, reply_markup=get_back_keyboard(user_id))
     await callback_query.answer()
 
 @app.on_callback_query(filters.regex(r"^legend_mx_claim$"))
@@ -207,8 +211,8 @@ async def legend_mx_claim_handler(client, callback_query: CallbackQuery):
     stats["last_claim_time"] = current_t
     stats["balance"] += 10
     await callback_query.message.edit_text(
-        f"🎁 **پیرۆزە! +10 Key (خەلاتێ 4 دەمژمێری) هاتە زێدەکرن!**\n💰 Balance: `{stats['balance']:,}` Key\n👑 خودان: {OWNERS[0]} & {OWNERS[1]}\n⏰ وقت بغداد: `{get_baghdad_time()}`",
-        reply_markup=get_back_keyboard()
+        f"🎁 **پیرۆزە! +10 Key (خەلاتێ 4 دەمژمێری) هاتە زێدەکرن!**\n💰 Balance: `{stats['balance']:,}` Key\n⏰ وقت بغداد: `{get_baghdad_time()}`",
+        reply_markup=get_back_keyboard(user_id)
     )
     await callback_query.answer("🎉 10 Key هاتنە وەرگرتن!")
 
@@ -229,12 +233,11 @@ async def profile_callback_handler(client, callback_query: CallbackQuery):
         f"📌 Profile ID: `{stats['profile_id']}`\n"
         f"📱 جۆرێ مۆبایلی / سیستەم: `{stats['mobile_type']}`\n"
         f"⭐ پلە (Level): `{stats['level']}` (XP: {stats['xp']})\n"
-        f"👑 خودان: {OWNERS[0]} & {OWNERS[1]}\n"
         f"⏱ دەمژمێرا بغداد: `{get_baghdad_time()}`\n"
         f"• 💰 Balance: `{stats['balance']:,}` Key\n"
         f"• 📥 گشتی داونلۆد: `{stats['downloads_count']}`\n"
     )
-    await callback_query.message.edit_text(profile_text, reply_markup=get_back_keyboard())
+    await callback_query.message.edit_text(profile_text, reply_markup=get_back_keyboard(user_id))
     await callback_query.answer()
 
 @app.on_callback_query(filters.regex(r"^my_downloads$"))
@@ -250,28 +253,27 @@ async def downloads_callback_handler(client, callback_query: CallbackQuery):
         f"{vids_text}\n\n"
         f"📊 گشتی داونلۆد: `{stats['downloads_count']}`\n"
         f"💰 Balance: `{stats['balance']:,}` Key\n"
-        f"👑 خودان: {OWNERS[0]} & {OWNERS[1]}\n"
         f"⏰ وقت بغداد: `{get_baghdad_time()}`"
     )
-    await callback_query.message.edit_text(text, reply_markup=get_back_keyboard())
+    await callback_query.message.edit_text(text, reply_markup=get_back_keyboard(user_id))
     await callback_query.answer()
 
 @app.on_callback_query(filters.regex(r"^top_100_ranking$"))
 async def top_100_ranking_handler(client, callback_query: CallbackQuery):
     sorted_users = sorted(user_stats.items(), key=lambda x: x[1].get("downloads_count", 0), reverse=True)[:100]
     
-    top_text = f"🏆 **ڕێزبەندا Top 100 (Omega Supreme):**\n👑 خودان: {OWNERS[0]} & {OWNERS[1]}\n\n"
+    top_text = f"🏆 **ڕێزبەندا Top 100 (Omega Supreme):**\n\n"
     if not sorted_users:
         top_text += "هێشتا کەس نەهاتیە ڕێزبەندێ."
     else:
         for idx, (uid, data) in enumerate(sorted_users, 1):
-            name = data.get("name", "User")
+            uname = data.get("username", "نەدیار")
             d_count = data.get("downloads_count", 0)
             lvl = data.get("level", "Omega Novice")
-            top_text += f"{idx}. {name} ({lvl}) — 📥 `{d_count}` ڤیدیۆ\n"
+            top_text += f"{idx}. {uname} ({lvl}) — 📥 `{d_count}` ڤیدیۆ\n"
             
     top_text += f"\n⏰ وقت بغداد: `{get_baghdad_time()}`"
-    await callback_query.message.edit_text(top_text, reply_markup=get_back_keyboard())
+    await callback_query.message.edit_text(top_text, reply_markup=get_back_keyboard(callback_query.from_user.id))
     await callback_query.answer()
 
 @app.on_callback_query(filters.regex(r"^bot_global_stats$"))
@@ -281,45 +283,176 @@ async def global_stats_handler(client, callback_query: CallbackQuery):
         f"📊 **ئامارێن گشتی یێن MX Omega:**\n"
         f"👥 کۆما کاربەران: `{len(user_stats)}`\n"
         f"📥 گشتی داونلۆدێن بۆتی: `{global_total_downloads}`\n"
-        f"👑 خودانێن بۆتی: {OWNERS[0]} & {OWNERS[1]}\n"
         f"⏰ وقت بغداد: `{get_baghdad_time()}`",
-        reply_markup=get_back_keyboard()
+        reply_markup=get_back_keyboard(callback_query.from_user.id)
     )
     await callback_query.answer()
 
 @app.on_callback_query(filters.regex(r"^bot_help$"))
 async def bot_help_handler(client, callback_query: CallbackQuery):
     help_text = (
-        f"💡 **رێنمایێن بەکارهۆنانێ (MX Omega Supreme God):**\n"
-        f"• 200 کۆدێن زەبەلاح (هەر کۆدەک 100M Key و تنێ 20 کەس دشێن بکار بینن).\n"
+        f"💡 **ڕێنمایێن بەکارهۆنانێ (MX Omega Supreme God):**\n"
+        f"• 200 کۆدێن زەبەلاح (هەر کۆدەک 500M Key و تنێ 20 کەس دشێن بکار بینن).\n"
         f"• خەلاتێ 4 دەمژمێری: 10 Key.\n"
         f"• نرخێ هەر داونلۆدەکێ: 1 Key.\n"
-        f"👑 خودانێن بۆتی: {OWNERS[0]} & {OWNERS[1]}\n"
         f"⏰ وقت بغداد: `{get_baghdad_time()}`"
     )
-    await callback_query.message.edit_text(help_text, reply_markup=get_back_keyboard())
+    await callback_query.message.edit_text(help_text, reply_markup=get_back_keyboard(callback_query.from_user.id))
     await callback_query.answer()
 
 @app.on_callback_query(filters.regex(r"^system_status$"))
 async def system_status_handler(client, callback_query: CallbackQuery):
     await callback_query.message.edit_text(
-        f"⚙️ **ڕاپۆرت و پشکنینا سیستەمی (Omega 100M+):**\n"
+        f"⚙️ **ڕاپۆرت و پشکنینا سیستەمی (Omega 500M+):**\n"
         f"• سەروەرێ Omega Supreme: `Active`\n"
-        f"👑 خودانێن بۆتی: {OWNERS[0]} & {OWNERS[1]}\n"
         f"⏰ وقت بغداد: `{get_baghdad_time()}`",
-        reply_markup=get_back_keyboard()
+        reply_markup=get_back_keyboard(callback_query.from_user.id)
     )
     await callback_query.answer()
 
 @app.on_callback_query(filters.regex(r"^back_home$"))
 async def back_home_handler(client, callback_query: CallbackQuery):
     user_id = callback_query.from_user.id
+    admin_temp_state.pop(user_id, None)
     bal = user_stats.setdefault(user_id, {}).get("balance", 0)
     await callback_query.message.edit_text(
-        f"🌟 بخێرهاتن ڤە بۆ MX DOWNLOAD Omega!\n💰 Balance-ێ تە: `{bal:,}` Key\n👑 خودان: {OWNERS[0]} & {OWNERS[1]}\n⏰ وقت بغداد: `{get_baghdad_time()}`",
-        reply_markup=get_main_menu_keyboard()
+        f"🌟 بخێرهاتن ڤە بۆ MX DOWNLOAD Omega!\n💰 Balance-ێ تە: `{bal:,}` Key\n⏰ وقت بغداد: `{get_baghdad_time()}`",
+        reply_markup=get_main_menu_keyboard(user_id)
     )
     await callback_query.answer()
+
+@app.on_callback_query(filters.regex(r"^admin_search_panel$"))
+async def admin_search_panel_handler(client, callback_query: CallbackQuery):
+    if callback_query.from_user.id != ADMIN_ID:
+        await callback_query.answer("❌ تو ئەدمن نینە!", show_alert=True)
+        return
+    
+    admin_temp_state.pop(callback_query.from_user.id, None)
+
+    if not user_stats:
+        await callback_query.message.edit_text(
+            "🔎 **گەران (Admin Search Panel):**\n\nهیچ بەکارهێنەرەک هێشتا نەهاتیە ناڤ بۆتی.",
+            reply_markup=get_back_keyboard(ADMIN_ID)
+        )
+        await callback_query.answer()
+        return
+
+    buttons = []
+    for uid, data in user_stats.items():
+        uname = data.get("username", "نەدیار")
+        buttons.append([InlineKeyboardButton(f"👤 {uname} (ID: {uid})", callback_data=f"admin_view_user|{uid}")])
+    
+    buttons.append([InlineKeyboardButton("🔙 ڤەگەر بۆ سەرەکی", callback_data="back_home")])
+    
+    await callback_query.message.edit_text(
+        f"🔎 **گەران (Admin Search Panel):**\nگشت بەکارهێنەرێن هەی (Click on user to manage balance, view downloads, or delete):\n\n⏰ وقت بغداد: `{get_baghdad_time()}`",
+        reply_markup=InlineKeyboardMarkup(buttons)
+    )
+    await callback_query.answer()
+
+@app.on_callback_query(filters.regex(r"^admin_view_user\|"))
+async def admin_view_user_handler(client, callback_query: CallbackQuery):
+    if callback_query.from_user.id != ADMIN_ID:
+        await callback_query.answer("❌ تو ئەدمن نینە!", show_alert=True)
+        return
+
+    uid = int(callback_query.data.split("|")[1])
+    data = user_stats.get(uid, {})
+    if not data:
+        await callback_query.answer("❌ بەکارهێنەر نەهاتە دیتن.", show_alert=True)
+        return
+
+    vids = data.get("downloaded_videos", [])
+    vids_text = "\n".join([f"• {v}" for v in vids]) if vids else "هیچ ڤیدیۆیەک نەهاتیە داونلۆدکرن."
+    
+    text = (
+        f"👤 **زانیاریێن تەواو یێن بەکارهێنەری (Admin Control):**\n\n"
+        f"🔹 ناڤ: `{data.get('name', 'User')}`\n"
+        f"🏷 Username: `{data.get('username', 'نەدیار')}`\n"
+        f"🆔 User ID: `{uid}`\n"
+        f"💰 Balance: `{data.get('balance', 0):,}` Key\n"
+        f"📥 گشتی داونلۆد: `{data.get('downloads_count', 0)}`\n\n"
+        f"🎬 **ڤیدیۆیێن دابەزاندى:**\n{vids_text}\n\n"
+        f"⏰ وقت بغداد: `{get_baghdad_time()}`"
+    )
+    
+    action_buttons = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("➕ زیادکرنا Balance", callback_data=f"admin_bal_add|{uid}"),
+            InlineKeyboardButton("➖ کێمکرنا Balance", callback_data=f"admin_bal_sub|{uid}")
+        ],
+        [
+            InlineKeyboardButton("🎁 Gift All Balance (خەلاتکرن)", callback_data=f"admin_gift_all|{uid}"),
+            InlineKeyboardButton("🗑 سڕینڤەکرنا Customer", callback_data=f"admin_delete_user|{uid}")
+        ],
+        [InlineKeyboardButton("🔙 ڤەگەر بۆ لیستا گەرانێ", callback_data="admin_search_panel")],
+        [InlineKeyboardButton("🔙 ڤەگەر بۆ سەرەکی", callback_data="back_home")]
+    ])
+    
+    await callback_query.message.edit_text(text, reply_markup=action_buttons)
+    await callback_query.answer()
+
+@app.on_callback_query(filters.regex(r"^admin_bal_add\|"))
+async def admin_bal_add_handler(client, callback_query: CallbackQuery):
+    if callback_query.from_user.id != ADMIN_ID:
+        await callback_query.answer("❌ تو ئەدمن نینە!", show_alert=True)
+        return
+    uid = int(callback_query.data.split("|")[1])
+    admin_temp_state[ADMIN_ID] = {"action": "add_bal", "target_uid": uid}
+    await callback_query.message.edit_text(
+        f"➕ **زیادکرنا Balance بۆ User ID: `{uid}`**\n\n"
+        f"هژمارا کییا (Keys) بنێرە یا تە دڤێت زێدە بکەی (بۆ نموونە: `500000000` یان `1000`):\n\n"
+        f"⏰ وقت بغداد: `{get_baghdad_time()}`",
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 پەشیمانبوون", callback_data=f"admin_view_user|{uid}")]])
+    )
+    await callback_query.answer()
+
+@app.on_callback_query(filters.regex(r"^admin_bal_sub\|"))
+async def admin_bal_sub_handler(client, callback_query: CallbackQuery):
+    if callback_query.from_user.id != ADMIN_ID:
+        await callback_query.answer("❌ تو ئەدمن نینە!", show_alert=True)
+        return
+    uid = int(callback_query.data.split("|")[1])
+    admin_temp_state[ADMIN_ID] = {"action": "sub_bal", "target_uid": uid}
+    await callback_query.message.edit_text(
+        f"➖ **کێمکرنا Balance ژ User ID: `{uid}`**\n\n"
+        f"هژمارا کییا بنێرە یا تە دڤێت کێم بکەی (بۆ نموونە: `100`):y\n\n"
+        f"⏰ وقت بغداد: `{get_baghdad_time()}`",
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 پەشیمانبوون", callback_data=f"admin_view_user|{uid}")]])
+    )
+    await callback_query.answer()
+
+@app.on_callback_query(filters.regex(r"^admin_gift_all\|"))
+async def admin_gift_all_handler(client, callback_query: CallbackQuery):
+    if callback_query.from_user.id != ADMIN_ID:
+        await callback_query.answer("❌ تو ئەدمن نینە!", show_alert=True)
+        return
+    uid = int(callback_query.data.split("|")[1])
+    admin_temp_state[ADMIN_ID] = {"action": "gift_bal", "target_uid": uid}
+    await callback_query.message.edit_text(
+        f"🎁 **Gift All Balance (دیاری کرن بۆ User ID: `{uid}`)**\n\n"
+        f"هژمارا کییا گشتی بنێرە یا تە دڤێت بکەییە دیاری (بۆ نموونە: `500000000`):y\n\n"
+        f"⏰ وقت بغداد: `{get_baghdad_time()}`",
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("🔙 پەشیمانبوون", callback_data=f"admin_view_user|{uid}")]])
+    )
+    await callback_query.answer()
+
+@app.on_callback_query(filters.regex(r"^admin_delete_user\|"))
+async def admin_delete_user_handler(client, callback_query: CallbackQuery):
+    if callback_query.from_user.id != ADMIN_ID:
+        await callback_query.answer("❌ تو ئەدمن نینە!", show_alert=True)
+        return
+    uid = int(callback_query.data.split("|")[1])
+    if uid in user_stats:
+        del user_stats[uid]
+    await callback_query.message.edit_text(
+        f"🗑 **ب سەرکەفتن بەکارهێنەر (User ID: `{uid}`) هاتە سڕینڤەکرن!**\n\n⏰ وقت بغداد: `{get_baghdad_time()}`",
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("🔙 ڤەگەر بۆ لیستا گەرانێ", callback_data="admin_search_panel")],
+            [InlineKeyboardButton("🔙 ڤەگەر بۆ سەرەکی", callback_data="back_home")]
+        ])
+    )
+    await callback_query.answer("✅ بەکارهێنەر هاتە سڕین!")
 
 @app.on_message(filters.text & filters.private & ~filters.command(["start"]))
 async def downloader_core_handler(client, message: Message):
@@ -328,37 +461,81 @@ async def downloader_core_handler(client, message: Message):
         return
 
     text_input = message.text.strip()
+
+    # Handle Admin input states (Balance modifications)
+    if user_id == ADMIN_ID and user_id in admin_temp_state:
+        state_data = admin_temp_state[ADMIN_ID]
+        target_uid = state_data["target_uid"]
+        action = state_data["action"]
+        
+        try:
+            amount = int(text_input.replace(",", ""))
+        except ValueError:
+            await message.reply_text("❌ ژکەرەما خۆ هژمارەکە دروست بنێرە (Numbers only).")
+            return
+
+        if target_uid in user_stats:
+            if action == "add_bal":
+                user_stats[target_uid]["balance"] += amount
+                new_bal = user_stats[target_uid]["balance"]
+                admin_temp_state.pop(ADMIN_ID, None)
+                await message.reply_text(
+                    f"✅ ب سەرکەفتن `{amount:,}` Key بۆ User ID `{target_uid}` هاتە زێدەکرن!\n"
+                    f"💰 Balance-ێ نوو: `{new_bal:,}` Key\n⏰ وقت بغداد: `{get_baghdad_time()}`",
+                    reply_markup=get_main_menu_keyboard(ADMIN_ID)
+                )
+            elif action == "sub_bal":
+                user_stats[target_uid]["balance"] = max(0, user_stats[target_uid]["balance"] - amount)
+                new_bal = user_stats[target_uid]["balance"]
+                admin_temp_state.pop(ADMIN_ID, None)
+                await message.reply_text(
+                    f"✅ ب سەرکەفتن `{amount:,}` Key ژ User ID `{target_uid}` هاتە کێمکرن!\n"
+                    f"💰 Balance-ێ نوو: `{new_bal:,}` Key\n⏰ وقت بغداد: `{get_baghdad_time()}`",
+                    reply_markup=get_main_menu_keyboard(ADMIN_ID)
+                )
+            elif action == "gift_bal":
+                user_stats[target_uid]["balance"] = amount
+                admin_temp_state.pop(ADMIN_ID, None)
+                await message.reply_text(
+                    f"🎁 ب سەرکەفتن Balance-ێ User ID `{target_uid}` هاتە گۆهڕین بۆ `{amount:,}` Key!\n"
+                    f"⏰ وقت بغداد: `{get_baghdad_time()}`",
+                    reply_markup=get_main_menu_keyboard(ADMIN_ID)
+                )
+        else:
+            admin_temp_state.pop(ADMIN_ID, None)
+            await message.reply_text("❌ بەکارهێنەر نەهاتە دیتن یان هاتیە سڕینڤەکرن.")
+        return
+
     stats = user_stats.setdefault(user_id, {
-        "balance": 100, "links_count": 0, "downloads_count": 0,
+        "balance": 0, "links_count": 0, "downloads_count": 0,
         "success_count": 0, "downloaded_videos": [], "name": message.from_user.first_name or "User",
+        "username": f"@{message.from_user.username}" if message.from_user.username else "نەدیار",
         "last_claim_time": 0, "profile_id": f"MX-PID-OMEGA-{random.randint(100000, 999999)}",
         "mobile_type": "Omega Android/iOS Device (720FPS)",
         "claimed_secret_codes": set(),
         "level": "Omega Novice", "xp": 0, "ref_count": 0
     })
 
-    if text_input in MX_200_100M_CODES:
+    if text_input in MX_200_500M_CODES:
         if text_input in stats["claimed_secret_codes"] or user_id in secret_code_usage_count[text_input]:
             await message.reply_text(f"❌ تو ڤی کۆدی پێشتر وەرگرتیە!\n⏰ وقت بغداد: `{get_baghdad_time()}`")
             return
         if len(secret_code_usage_count[text_input]) >= 20:
             await message.reply_text(
                 f"❌ سنوورێ ڤی کۆدی تەواو بوو (تنێ 20 کەسان بکار ئینایە).\n"
-                f"👑 خودانێن بۆتی: {OWNERS[0]} & {OWNERS[1]}\n"
                 f"⏰ وقت بغداد: `{get_baghdad_time()}`"
             )
             return
 
         secret_code_usage_count[text_input].add(user_id)
         stats["claimed_secret_codes"].add(text_input)
-        reward_val = MX_200_100M_CODES[text_input]
+        reward_val = MX_200_500M_CODES[text_input]
         stats["balance"] += reward_val
         stats["xp"] += 50000
         
         await message.reply_text(
-            f"🎉 **پیرۆزە! +{reward_val:,} Balance (کۆدێ 100M) هاتە زێدەکرن!**\n"
+            f"🎉 **پیرۆزە! +{reward_val:,} Balance (کۆدێ 500M) هاتە زێدەکرن!**\n"
             f"💰 Balance-ێ نوو: `{stats['balance']:,}` Key\n"
-            f"👑 خودان: {OWNERS[0]} & {OWNERS[1]}\n"
             f"⏰ وقت بغداد: `{get_baghdad_time()}`"
         )
         return
@@ -366,11 +543,10 @@ async def downloader_core_handler(client, message: Message):
     if not text_input.startswith("http"):
         free_key_text = ""
         if stats["balance"] < 1:
-            free_key_text = f"\n\n💎 Balance-ێ تە نەما! بۆ وەرگرتنا Free Key سەرەدانا خودانان بکە: {OWNERS[0]} یان {OWNERS[1]}"
+            free_key_text = f"\n\n💎 Balance-ێ تە نەما! بۆ وەرگرتنا Free Key سەرەدانا خودانان بکە."
         
         await message.reply_text(
             f"⚠️ ژکەرەما خۆ لینکا دروست (YouTube, TikTok, Instagram) یان کۆدەکێ ڕاست بنێرە!{free_key_text}\n"
-            f"👑 خودان: {OWNERS[0]} & {OWNERS[1]}\n"
             f"⏰ وقت بغداد: `{get_baghdad_time()}`"
         )
         return
@@ -378,7 +554,6 @@ async def downloader_core_handler(client, message: Message):
     if stats["balance"] < 1:
         await message.reply_text(
             f"❌ Balance-ێ تە نینە! (1 Key پێدڤییە بۆ داونلۆدکرنێ).\n"
-            f"💎 بۆ وەرگرتنا Free Key سەرەدانا خودانان بکە: {OWNERS[0]} یان {OWNERS[1]}\n"
             f"⏰ وقت بغداد: `{get_baghdad_time()}`"
         )
         return
@@ -400,7 +575,7 @@ async def downloader_core_handler(client, message: Message):
             f"🎬 ناڤ: {title}\n"
             f"💰 Balance: `{stats['balance']:,}` Key (نرخ: 1 Key)\n"
             f"🚀 کواليتى: 720 FPS Hyper Quantum Smooth (No Watermark)\n\n"
-            f"کوالیتیا خۆ هەڵبژێرە 👇\n👑 خودان: {OWNERS[0]} & {OWNERS[1]}\n⏰ وقت بغداد: `{get_baghdad_time()}`",
+            f"کوالیتیا خۆ هەڵبژێرە 👇\n⏰ وقت بغداد: `{get_baghdad_time()}`",
             reply_markup=action_kb
         )
     except Exception as e:
@@ -414,7 +589,7 @@ async def download_callback_handler(client, callback_query: CallbackQuery):
     stats = user_stats.setdefault(user_id, {"balance": 0, "downloads_count": 0, "downloaded_videos": [], "xp": 0})
     
     if stats["balance"] < 1:
-        await callback_query.answer(f"❌ Balance-ێ تە نینە! (1 Key پێدڤییە). بۆ Free Key سەرەدانا {OWNERS[0]} یان {OWNERS[1]} بکە.", show_alert=True)
+        await callback_query.answer("❌ Balance-ێ تە نینە! (1 Key پێدڤییە).", show_alert=True)
         return
 
     stats["balance"] -= 1
@@ -440,7 +615,7 @@ async def download_callback_handler(client, callback_query: CallbackQuery):
                 title = info.get('title', 'MX Video')
             await callback_query.message.reply_video(
                 video=filename,
-                caption=f"🎬 MP4 (No Watermark - 720FPS Omega) هاتە داونلۆدکرن!\n💰 Balance: `{stats['balance']:,}` Key\n👑 خودان: {OWNERS[0]} & {OWNERS[1]}\n⏰ وقت بغداد: `{get_baghdad_time()}`"
+                caption=f"🎬 MP4 (No Watermark - 720FPS Omega) هاتە داونلۆدکرن!\n💰 Balance: `{stats['balance']:,}` Key\n⏰ وقت بغداد: `{get_baghdad_time()}`"
             )
         else:
             ydl_opts = {
@@ -453,7 +628,7 @@ async def download_callback_handler(client, callback_query: CallbackQuery):
                 title = info.get('title', 'MX Audio')
             await callback_query.message.reply_audio(
                 audio=filename, title=title, performer="MX Omega Supreme God",
-                caption=f"🎶 MP3 هاتە داونلۆدکرن!\n💰 Balance: `{stats['balance']:,}` Key\n👑 خودان: {OWNERS[0]} & {OWNERS[1]}\n⏰ وقت بغداد: `{get_baghdad_time()}`"
+                caption=f"🎶 MP3 هاتە داونلۆدکرن!\n💰 Balance: `{stats['balance']:,}` Key\n⏰ وقت بغداد: `{get_baghdad_time()}`"
             )
 
         stats["downloads_count"] += 1
